@@ -1,3 +1,6 @@
+import t1 from '../assets/team-t1.jpg'
+import t2 from '../assets/team-t2.jpg'
+import t3 from '../assets/team-t3.jpg'
 import { useRef, useState, useEffect } from 'react'
 import { ArrowRight, UtensilsCrossed, Truck, ShieldCheck, Cookie, MapPin, ChevronLeft, ChevronRight } from 'lucide-react'
 import { useApp } from '../store'
@@ -148,6 +151,10 @@ const FALLBACK_TEAM: TeamMember[] = [
   { name: 'AbdulAzeez Adegbite Ayomide', role: 'Founder and Head Fryer', img: 'https://images.unsplash.com/photo-1522529599102-193c0d76b5b6?w=600&q=80&fit=crop' },
   { name: 'Ademola Khalif', role: 'Team member', img: 'https://images.unsplash.com/photo-1614023342667-6f060e9d1e04?w=600&q=80&fit=crop' },
   { name: 'Jumah Muhammed O.', role: 'Team member', img: 'https://images.unsplash.com/photo-1783012039560-5690190a9b9b?w=600&q=80&fit=crop' },
+  { name: 'Yisau Shukroh', role: 'Team member', img: t1 },
+  { name: 'Fatimah Salahudeen', role: 'Team member', img: t2 },
+  { name: 'Masruroh Fasasi', role: 'Team member', img: t3 },
+  { name: 'Opatola Abass', role: 'Team member', img: 'https://images.unsplash.com/photo-1546525848-3ce03ca516f6?w=600&q=80&fit=crop' },
 ]
 
 /* Supabase rows use slightly different field names than the UI, so map them. */
