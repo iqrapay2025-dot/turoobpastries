@@ -38,6 +38,7 @@ export function Header() {
   const [open, setOpen] = useState(false)
   const section = useSection()
   const links: [string, () => void][] = [
+     ['Home', () => go('#/')],
     ['Order', () => go('#/order')],
     ['Meet the Team', () => section('team')],
     ['Reviews', () => section('reviews')],
@@ -73,7 +74,7 @@ export function Header() {
       <div className="mx-auto flex h-17 max-w-6xl items-center justify-between gap-2 px-4 sm:px-6">
         <Logo />
         <nav className="hidden items-center gap-1 lg:flex">
-          {links.map(([l, fn]) => <button key={l} onClick={fn} className={cx('min-h-11 rounded-full px-4 text-[15px] font-semibold transition hover:bg-yellow-light', l === 'Order' && route.startsWith('#/order') && 'bg-yellow-light')}>{l}</button>)}
+          {links.map(([l, fn]) => <button key={l} onClick={fn} className={cx('min-h-11 rounded-full px-4 text-[15px] font-semibold transition hover:bg-yellow-light', ((l === 'Order' && route.startsWith('#/order')) || (l === 'Home' && (route === '#/' || route === ''))) && 'bg-yellow-light')}>{l}</button>)}
         </nav>
         <div className="flex shrink-0 items-center gap-2">
           <Button size="md" disabled={!anyOpen} onClick={() => go('#/order')} className="hidden md:inline-flex">Pre-order now</Button>

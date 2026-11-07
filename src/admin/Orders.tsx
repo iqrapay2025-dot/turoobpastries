@@ -5,6 +5,7 @@ import { BATCHES, naira, type BatchId } from '../data'
 import { Card, StagePill, PayPill } from './ui'
 import { STAGES, PUFF_PRICE, items, sub, total, type AOrder, type Stage } from './data'
 import { useAdmin } from './adminContext'
+import OverallStats from './OverallStats'
 
 const digits = (s: string) => s.replace(/\D/g, '').slice(-10)
 const placedText = (s: string) => {
@@ -168,6 +169,7 @@ export default function Orders() {
   return (
     <div className="mx-auto max-w-7xl space-y-6">
       <div><h1 className="text-3xl font-semibold sm:text-4xl">Orders</h1><p className="text-ink/70">Live orders for this week's batches.</p></div>
+      <OverallStats />
       <BatchSummary />
 
       <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
