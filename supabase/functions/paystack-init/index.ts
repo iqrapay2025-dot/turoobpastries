@@ -49,8 +49,9 @@ Deno.serve(async (req) => {
         amount: order.total * 100, // naira -> kobo
         currency: "NGN",
         reference,
-        // The site uses hash routes, so the return link must be /#/confirmation?token=...
-        callback_url: `${siteUrl}/#/confirmation?token=${order.public_token}`,
+        
+                // Clean path routes: return to /confirmation?token=...
+        callback_url: `${siteUrl}/confirmation?token=${order.public_token}`,
         metadata: { order_number: order.order_number, customer: order.customer_name },
       }),
     });

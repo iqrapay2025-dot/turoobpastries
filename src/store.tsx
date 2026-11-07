@@ -1,6 +1,16 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from 'react'
 import { fetchProducts, fetchAppSettings, fetchDeliverySlots, getBatchStatus } from './lib/supabase'
 
+
+
+// Routes keep the same "#/path?query" shape the rest of the app uses,
+// but now come from the real URL path (/order, /admin ...).
+const currentRoute = () => '#' + (window.location.pathname || '/') + window.location.search
+
+// Old links like /#/confirmation?token=... are converted to clean paths on load.
+if (typeof window !== 'undefined' && window.location.hash.startsWith('#/')) {
+  window.history.replaceState(null, '', window.location.hash.slice(1))
+}
 /* ------------------------------------------------------------------ types */
 type Toast = { id: string; kind: 'success' | 'error' | 'info'; text: string }
 
@@ -132,7 +142,7 @@ export const StoreProvider = ({ children }: { children: ReactNode }) => {
   const [batchRows, setBatchRows] = useState<BatchRow[]>([])
   const [batchError, setBatchError] = useState(false)
 
-  const [route, setRoute] = useState(window.location.hash)
+    const [route, setRoute] = useState(currentRoute)
   const [now, setNow] = useState(() => new Date())
 
   /* ---- clock (drives countdowns and open/closed checks) ---- */
@@ -141,11 +151,34 @@ export const StoreProvider = ({ children }: { children: ReactNode }) => {
     return () => clearInterval(t)
   }, [])
 
-  /* ---- route (hash) ---- */
+    /* ---- route (clean paths) ---- */
   useEffect(() => {
-    const onHash = () => setRoute(window.location.hash)
+    const sync = () => setRoute(currentRoute())
+    const onHash = () => {
+      if (window.location.hash.startsWith('#/')) {
+        window.history.replaceState(null, '', window.location.hash.slice(1))
+        sync()
+      }
+    }
+    // Links written as href="#/order" are turned into real page changes.
+    const onClick = (e: MouseEvent) => {
+      if (e.defaultPrevented || e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return
+      const a = (e.target as HTMLElement).closest('a')
+      const href = a?.getAttribute('href')
+      if (!a || !href || !href.startsWith('#/') || (a.target && a.target !== '_self')) return
+      e.preventDefault()
+      window.history.pushState(null, '', href.slice(1))
+      sync()
+      window.scrollTo({ top: 0 })
+    }
+    window.addEventListener('popstate', sync)
     window.addEventListener('hashchange', onHash)
-    return () => window.removeEventListener('hashchange', onHash)
+    document.addEventListener('click', onClick)
+    return () => {
+      window.removeEventListener('popstate', sync)
+      window.removeEventListener('hashchange', onHash)
+      document.removeEventListener('click', onClick)
+    }
   }, [])
 
   /* ---- cart persistence ---- */
@@ -243,8 +276,10 @@ export const StoreProvider = ({ children }: { children: ReactNode }) => {
     })
   }, [])
 
-  const go = useCallback((href: string) => {
-    window.location.hash = href.startsWith('#') ? href : `#${href}`
+    const go = useCallback((href: string) => {
+    const path = href.startsWith('#') ? href.slice(1) : href
+    window.history.pushState(null, '', path || '/')
+    setRoute(currentRoute())
     window.scrollTo({ top: 0 })
   }, [])
 

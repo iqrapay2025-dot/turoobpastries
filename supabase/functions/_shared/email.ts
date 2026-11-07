@@ -80,8 +80,8 @@ export function orderReceivedEmail(o: any, items: any[]) {
 
 // deno-lint-ignore no-explicit-any
 export function feeConfirmEmail(o: any, items: any[]) {
-  // The site uses hash routes, so the link must be /#/fee?token=...
-  const link = `${site()}/#/fee?token=${o.public_token}`;
+  // Clean path route: /fee?token=...
+  const link = `${site()}/fee?token=${o.public_token}`;
   return {
     subject: `Confirm your delivery fee for ${o.order_number}`,
     html: wrap(
