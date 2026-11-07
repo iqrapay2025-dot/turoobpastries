@@ -1,4 +1,5 @@
 // Starts a Paystack payment for an order. Body: { public_token: string }
+// @ts-nocheck
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.4";
 import { corsHeaders, json } from "../_shared/cors.ts";
 

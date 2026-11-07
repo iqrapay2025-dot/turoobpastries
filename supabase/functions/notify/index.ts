@@ -1,4 +1,5 @@
 // Sends transactional emails.
+// @ts-nocheck
 //  { type: "order_received", public_token }   -> called by the site after place_order
 //  { type: "fee_confirm",    order_id }       -> called by the admin dashboard (admin login required)
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.4";

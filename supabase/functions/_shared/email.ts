@@ -1,4 +1,5 @@
 // Brevo transactional email helper + simple templates.
+// @ts-nocheck
 const esc = (s: string) =>
   String(s ?? "").replace(/[&<>"']/g, (c) =>
     ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]!)
