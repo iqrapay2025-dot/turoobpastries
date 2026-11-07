@@ -16,7 +16,7 @@ function Hero() {
         <div>
           <span className="mb-4 inline-flex items-center gap-2 rounded-full bg-yellow px-4 py-1.5 text-sm font-bold"><Cookie className="size-4" />Made by Unilorin students</span>
           <h1 className="text-[44px] font-semibold leading-[1.02] sm:text-6xl lg:text-7xl">Hot, fresh <span className="text-red">puff-puff.</span> Friday, Saturday and Sunday.</h1>
-          <p className="mt-5 max-w-lg text-lg text-ink-soft">Order for Friday, Saturday or Sunday, then pick up at Central Mosque or have it delivered across campus, golden, fluffy and still warm.</p>
+          <p className="mt-5 max-w-lg text-lg text-ink-soft">Order for Friday, Saturday or Sunday, then pick up at Central Mosque or have it delivered across campus and off-campus, golden, fluffy and still warm.</p>
           <div className="mt-7 flex flex-wrap items-center gap-3">
             <Button size="lg" disabled={closed} onClick={() => go('#/order')}>{closed ? 'Orders closed' : 'Pre-order now'}<ArrowRight className="size-5" /></Button>
             <Button size="lg" variant="secondary" onClick={() => go('#/status')}>Track my order</Button>
@@ -114,25 +114,26 @@ type Review = { name: string; where: string; rating: number; text: string }
 function Reviews({ items }: { items: Review[] }) {
   return (
     <section id="reviews" className="mx-auto max-w-6xl scroll-mt-20 px-4 py-16 sm:px-6">
-      <SectionTitle eyebrow="Customer reviews" title="What our customers say" />
-      <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+      <SectionTitle eyebrow="Customer reviews" title="What our customers say" sub="Slide through to read more." />
+      <Carousel cardW={320}>
         {items.map((r) => (
-          <div key={r.name + r.text} className="rounded-[28px] bg-white p-6 shadow-soft transition duration-300 hover:-translate-y-1.5 hover:shadow-pop">
+          <article key={r.name + r.text} className="flex w-[320px] shrink-0 snap-start flex-col rounded-[28px] bg-white p-6 shadow-soft transition duration-300 hover:-translate-y-1.5 hover:shadow-pop">
             <div className="mb-3 flex items-center gap-1" aria-label={`${r.rating} out of 5 stars`}>
               {[1, 2, 3, 4, 5].map((star) => (
                 <span key={star} className={'text-base ' + (star <= r.rating ? 'text-yellow' : 'text-ink/20')}>★</span>
               ))}
             </div>
-            <p className="mb-3 text-sm text-ink-soft">{r.text}</p>
-            <p className="text-sm font-semibold text-ink">{r.name}</p>
-            {r.where && <p className="text-xs text-ink/70">{r.where}</p>}
-          </div>
+            <p className="mb-4 flex-1 text-sm text-ink-soft">{r.text}</p>
+            <div>
+              <p className="text-sm font-semibold text-ink">{r.name}</p>
+              {r.where && <p className="text-xs text-ink/70">{r.where}</p>}
+            </div>
+          </article>
         ))}
-      </div>
+      </Carousel>
     </section>
   )
 }
-
 /* ------------------------------------------------------------ Fallbacks */
 // Placeholder content is only used for reviews and team members.
 const FALLBACK_REVIEWS: Review[] = [
