@@ -1,0 +1,10 @@
+{
+  "description": "A puff-puff pre-order site for University of Ilorin students to browse batches, schedule pickup or delivery, and track orders with clear pricing.",
+  "robots": {
+    "index": false
+  },
+  "accessibility": {
+    "addBypassLinks": false,
+    "ignoreReducedMotion": false
+  }
+}

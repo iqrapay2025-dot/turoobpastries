@@ -1,0 +1,40 @@
+@import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Fredoka:wght@400;500;600;700&display=swap');
+@import 'tailwindcss';
+
+@theme {
+  --color-red: #D62828;
+  --color-red-light: #F4A3A3;
+  --color-red-dark: #9B1B1B;
+  --color-red-tint: #FDE8E8;
+  --color-yellow: #FFC107;
+  --color-yellow-light: #FFE9A0;
+  --color-yellow-dark: #C79100;
+  --color-ink: #111111;
+  --color-ink-soft: #2B2B2B;
+  --color-cream: #FFF8EC;
+  --font-display: 'Fredoka', 'Baloo 2', system-ui, sans-serif;
+  --font-sans: 'DM Sans', Inter, system-ui, sans-serif;
+  --shadow-soft: 0 8px 24px -8px rgba(155, 27, 27, 0.18);
+  --shadow-pop: 0 14px 34px -10px rgba(155, 27, 27, 0.35);
+}
+
+@layer base {
+  html { scroll-behavior: smooth; }
+  body { font-family: var(--font-sans); background: #FFF8EC; color: #111; -webkit-font-smoothing: antialiased; }
+  h1, h2, h3, h4 { font-family: var(--font-display); letter-spacing: -0.01em; }
+  button { cursor: pointer; }
+  button:disabled { cursor: not-allowed; }
+  /* Clear, consistent keyboard focus for chips, tabs, cards, links and buttons */
+  :focus-visible { outline: 3px solid #D62828; outline-offset: 3px; border-radius: 12px; }
+  footer :focus-visible, .on-dark :focus-visible, .on-dark:focus-visible { outline-color: #FFC107; }
+  tr:focus-visible { outline-offset: -3px; }
+}
+
+.no-scrollbar::-webkit-scrollbar { display: none; }
+.no-scrollbar { scrollbar-width: none; }
+@keyframes pop-in { from { opacity: 0; transform: translateY(12px) scale(.97); } to { opacity: 1; transform: none; } }
+.pop-in { animation: pop-in .25s ease-out both; }
+@keyframes twinkle { 0%,100% { opacity: .3; transform: scale(.7) rotate(0); } 50% { opacity: 1; transform: scale(1.1) rotate(20deg); } }
+.twinkle { animation: twinkle 2.8s ease-in-out infinite; }
+@keyframes spin { to { transform: rotate(360deg); } }
+.spin { animation: spin .8s linear infinite; }
