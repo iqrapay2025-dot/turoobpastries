@@ -193,11 +193,10 @@ export function BatchPicker({ compact }: { compact?: boolean }) {
   const { batch, setBatch, batchRows, batchError, batchOpen } = useApp()
 
   if (batchError) return <p className="rounded-2xl bg-white p-4 text-sm font-semibold text-red-dark shadow-soft">Couldn’t load the batch days. Please refresh the page.</p>
-    const ORDER: Record<BatchId, number> = { fri: 0, sat: 1, sun: 2 }
+  const ORDER: Record<BatchId, number> = { fri: 0, sat: 1, sun: 2 }
   const tabs = batchRows
     .filter((r) => ID_BY_DOW[r.day_of_week])
     .sort((a, b) => ORDER[ID_BY_DOW[a.day_of_week]] - ORDER[ID_BY_DOW[b.day_of_week]])
-  if (tabs.length === 0) return <p className="text-sm text-ink-soft">Checking batch days…</p>
   if (tabs.length === 0) return <p className="text-sm text-ink-soft">Checking batch days…</p>
 
   const cols = tabs.length === 1 ? 'sm:grid-cols-1' : tabs.length === 2 ? 'sm:grid-cols-2' : 'sm:grid-cols-3'

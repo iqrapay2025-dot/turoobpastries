@@ -1,9 +1,10 @@
-import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
 import { ClipboardList, Settings as Cog, Users, LogOut, Bell, ExternalLink, Eye, EyeOff, AlertCircle } from 'lucide-react'
 import { useApp } from '../store'
 import { Button, Field, Toasts, cx } from '../components/ui'
 import { Logo } from '../components/Layout'
-import { type AOrder, type Settings } from './data'
+import { type AOrder, type Settings, type Stage } from './data'
+import { A, type SlotsByDay } from './adminContext'
 import Orders from './Orders'
 import SettingsPage from './SettingsPage'
 import Customers from './Customers'
@@ -17,7 +18,7 @@ import {
 } from '../lib/supabase'
 
 /* ------------------------------------------------------------ constants */
-export type BatchKey = 'fri' | 'sat' | 'sun'
+type BatchKey = 'fri' | 'sat' | 'sun'
 const DOW: Record<BatchKey, number> = { fri: 5, sat: 6, sun: 0 }
 const KEY_BY_DOW: Record<number, BatchKey> = { 5: 'fri', 6: 'sat', 0: 'sun' }
 
@@ -25,6 +26,7 @@ const KEY_BY_DOW: Record<number, BatchKey> = { 5: 'fri', 6: 'sat', 0: 'sun' }
 const STAGE_TO_STATUS: Record<string, string> = {
   new: 'received',
   awaiting: 'received',
+  paid: 'received',
   preparing: 'preparing',
   out: 'out_for_delivery',
   ready: 'ready_for_pickup',
@@ -34,7 +36,8 @@ const STAGE_TO_STATUS: Record<string, string> = {
 
 const EMPTY_SETTINGS: Settings = {
   open: { fri: false, sat: false, sun: false },
-  cutoff: { fri: '15:30', sat: '05:00', sun: '05:00' },
+  cutoff: { fri: '07:00', sat: '07:00', sun: '07:00' },
+  opens: { fri: '18:00', sat: '18:00', sun: '18:00' },
   zobo: false,
   zoboPrice: 500,
   maxOn: false,
@@ -43,33 +46,6 @@ const EMPTY_SETTINGS: Settings = {
   feeOff: 200,
   slots: [],
 }
-
-/* -------------------------------------------------------------- context */
-export type DeliverySlot = { id?: string | number; batch: BatchKey; label: string; active: boolean }
-
-export type ZoboProduct = { id: string | number; name: string; price: number }
-
-type Ctx = {
-  orders: AOrder[]
-  setOrders: (f: (o: AOrder[]) => AOrder[]) => void
-  settings: Settings
-  setSettings: (s: Settings) => void
-  settingsLoaded: boolean
-  slots: DeliverySlot[]
-  zoboProducts: ZoboProduct[]
-  seen: Set<string>
-  markSeen: (no: string) => void
-  // Persist to Supabase (use these from Orders.tsx and SettingsPage.tsx)
-  saveSettings: (s: Settings) => Promise<void>
-  saveSlots: (s: DeliverySlot[]) => Promise<void>
-  saveZoboPrices: (prices: Record<string, number>) => Promise<void>
-  setStage: (no: string, stage: string) => Promise<void>
-  markPaidManually: (no: string) => Promise<void>
-  confirmFee: (no: string, fee: number) => Promise<void>
-  reload: () => Promise<void>
-}
-const A = createContext<Ctx>(null as never)
-export const useAdmin = () => useContext(A)
 
 /* ---------------------------------------------------------------- login */
 function Login({ onIn }: { onIn: () => void }) {
@@ -143,18 +119,16 @@ export default function AdminApp() {
   const [checking, setChecking] = useState(true)
   const [orders, setOrdersState] = useState<AOrder[]>([])
   const [settings, setSettings] = useState<Settings>(EMPTY_SETTINGS)
-  const [settingsLoaded, setSettingsLoaded] = useState(false)
-  const [slots, setSlots] = useState<DeliverySlot[]>([])
-  const [zoboProducts, setZoboProducts] = useState<ZoboProduct[]>([])
   const [seen, setSeen] = useState<Set<string>>(new Set())
+  const [settingsLoaded, setSettingsLoaded] = useState(false)
+  const [slotsByDay, setSlotsByDay] = useState<SlotsByDay>({ fri: [], sat: [], sun: [] })
 
-  const ordersRef = useRef<Array<AOrder & { id: string }>>([])
+  const ordersRef = useRef<AOrder[]>([])
   const batchKeyById = useRef<Record<number, BatchKey>>({})
-  const dayIdByKey = useRef<Partial<Record<BatchKey, string | number>>>({})
 
   const setOrders = (f: (o: AOrder[]) => AOrder[]) => setOrdersState(f)
   const markSeen = (no: string) => setSeen((s) => new Set(s).add(no))
-  const fresh = orders.filter((o) => o.stage === 'new' && !seen.has(o.no)).length
+  const fresh = orders.filter((o) => (o.stage === 'new' || o.stage === 'paid') && !seen.has(o.no)).length
 
   /* ---- session: restore on refresh, react to sign-out ---- */
   useEffect(() => {
@@ -170,11 +144,7 @@ export default function AdminApp() {
       setChecking(false)
     })
     const { data: sub } = supabase.auth.onAuthStateChange((event) => {
-      if (event === 'SIGNED_OUT') {
-        setAuthed(false)
-        setSettingsLoaded(false)
-        setSlots([])
-      }
+      if (event === 'SIGNED_OUT') setAuthed(false)
     })
     return () => {
       alive = false
@@ -192,8 +162,6 @@ export default function AdminApp() {
   const signOut = async () => {
     await supabase.auth.signOut()
     setAuthed(false)
-    setSettingsLoaded(false)
-    setSlots([])
     go('#/admin/login')
   }
 
@@ -204,7 +172,7 @@ export default function AdminApp() {
         supabase.from('batch_days').select('*'),
         supabase.from('products').select('*').order('sort_order'),
         supabase.from('app_settings').select('*').eq('id', 1).single(),
-        supabase.from('delivery_slots').select('*').order('sort_order'),
+        supabase.from('delivery_slots').select('batch_day_id,label').eq('is_active', true).order('sort_order'),
       ])
       if (bd.error) throw bd.error
       if (pr.error) throw pr.error
@@ -214,19 +182,25 @@ export default function AdminApp() {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const days: any[] = bd.data ?? []
       batchKeyById.current = Object.fromEntries(days.filter((d) => KEY_BY_DOW[d.day_of_week]).map((d) => [d.id, KEY_BY_DOW[d.day_of_week]]))
-      dayIdByKey.current = Object.fromEntries(days.filter((d) => KEY_BY_DOW[d.day_of_week]).map((d) => [KEY_BY_DOW[d.day_of_week], d.id]))
       const row = (k: BatchKey) => days.find((d) => d.day_of_week === DOW[k])
       const hhmm = (t: string | undefined, fallback: string) => (t ? String(t).slice(0, 5) : fallback)
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const zobos = (pr.data ?? []).filter((p: any) => /zobo/i.test(p.name))
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const puffs = (pr.data ?? []).filter((p: any) => !/zobo/i.test(p.name))
       const maxes = days.map((d) => d.max_portions).filter((m) => m !== null && m !== undefined)
 
-      setSettings({
+            setSettings({
         open: { fri: !!row('fri')?.is_open, sat: !!row('sat')?.is_open, sun: !!row('sun')?.is_open },
         cutoff: {
-          fri: hhmm(row('fri')?.cutoff_time, '15:30'),
-          sat: hhmm(row('sat')?.cutoff_time, '05:00'),
-          sun: hhmm(row('sun')?.cutoff_time, '05:00'),
+          fri: hhmm(row('fri')?.cutoff_time, '07:00'),
+          sat: hhmm(row('sat')?.cutoff_time, '07:00'),
+          sun: hhmm(row('sun')?.cutoff_time, '07:00'),
+        },
+        opens: {
+          fri: hhmm(row('fri')?.opens_time, '18:00'),
+          sat: hhmm(row('sat')?.opens_time, '18:00'),
+          sun: hhmm(row('sun')?.opens_time, '18:00'),
         },
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         zobo: zobos.some((p: any) => p.is_available),
@@ -237,16 +211,16 @@ export default function AdminApp() {
         feeOn: Number(st.data.on_campus_fee ?? 100),
         feeOff: Number(st.data.off_campus_fee ?? 200),
         slots: [],
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        puffPrice: puffs.length ? Number((puffs[0] as any).price) : 100,
       })
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      setSlots((sl.data ?? []).map((s: any) => ({
-        id: s.id,
-        batch: batchKeyById.current[s.batch_day_id] ?? 'fri',
-        label: s.label,
-        active: !!s.is_active,
-      })))
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      setZoboProducts(zobos.map((p: any) => ({ id: p.id, name: p.name, price: Number(p.price) })))
+
+      const map: SlotsByDay = { fri: [], sat: [], sun: [] }
+      for (const r of (sl.data ?? []) as Array<{ batch_day_id: number; label: string }>) {
+        const k = batchKeyById.current[r.batch_day_id]
+        if (k) map[k].push(r.label)
+      }
+      setSlotsByDay(map)
       setSettingsLoaded(true)
     } catch (e) {
       console.error('Error loading settings:', e)
@@ -266,8 +240,9 @@ export default function AdminApp() {
           items.filter((i) => test(String(i.product_name).toLowerCase())).reduce((a, i) => a + i.quantity, 0)
 
         const pending = o.fee_status === 'pending_review'
-        const stage: string =
-          o.order_status === 'received' ? (pending ? 'awaiting' : 'new')
+        const paid = o.payment_status === 'paid'
+        const stage: Stage =
+          o.order_status === 'received' ? (pending ? 'awaiting' : paid ? 'paid' : 'new')
             : o.order_status === 'preparing' ? 'preparing'
               : o.order_status === 'out_for_delivery' ? 'out'
                 : o.order_status === 'ready_for_pickup' ? 'ready'
@@ -291,12 +266,13 @@ export default function AdminApp() {
           fee: o.delivery_fee ?? 0,
           feeFinal: o.fee_status !== 'pending_review',
           linkSent: o.fee_status === 'confirmed' || o.fee_status === 'accepted',
-          paid: o.payment_status === 'paid',
+          feeStatus: o.fee_status,
+          paid,
           stage,
           batch: batchKeyById.current[o.batch_day_id] ?? 'fri',
           placed: o.created_at ?? '',
           notes: o.notes ?? '',
-        } as unknown as AOrder & { id: string }
+        } as AOrder
       })
       ordersRef.current = mapped
       setOrdersState(mapped)
@@ -365,16 +341,19 @@ export default function AdminApp() {
     await loadOrders()
   }, [loadOrders, toast])
 
-  const saveSettings = useCallback(async (s: Settings) => {
+  const saveSettings = useCallback(async (s: Settings, slots: SlotsByDay) => {
     try {
       // batch days
       for (const k of ['fri', 'sat', 'sun'] as BatchKey[]) {
         const { error } = await supabase
           .from('batch_days')
-          .update({
+                    .update({
             is_open: s.open[k],
             cutoff_time: `${s.cutoff[k]}:00`,
+            opens_time: `${s.opens[k]}:00`,
+            opens_day_offset: 1, // opens the evening before the batch day
             max_portions: s.maxOn ? s.max : null,
+            ...(s.open[k] ? { note: null } : {}), // opening a day removes "Coming soon"
           })
           .eq('day_of_week', DOW[k])
         if (error) throw error
@@ -382,6 +361,28 @@ export default function AdminApp() {
       // fees
       const f = await supabase.from('app_settings').update({ on_campus_fee: s.feeOn, off_campus_fee: s.feeOff }).eq('id', 1)
       if (f.error) throw f.error
+      // delivery slots, per day: insert the new list first, then remove the old rows
+      const days = await supabase.from('batch_days').select('id, day_of_week')
+      if (days.error) throw days.error
+      const oldSlots = await supabase.from('delivery_slots').select('id, batch_day_id')
+      if (oldSlots.error) throw oldSlots.error
+      for (const k of ['fri', 'sat', 'sun'] as BatchKey[]) {
+        const day = (days.data ?? []).find((d: { day_of_week: number }) => d.day_of_week === DOW[k])
+        if (!day) continue
+        if (slots[k].length > 0) {
+          const ins = await supabase
+            .from('delivery_slots')
+            .insert(slots[k].map((label, i) => ({ batch_day_id: day.id, label, sort_order: i, is_active: true })))
+          if (ins.error) throw ins.error
+        }
+        const oldIds = (oldSlots.data ?? [])
+          .filter((r: { batch_day_id: number }) => r.batch_day_id === day.id)
+          .map((r: { id: number }) => r.id)
+        if (oldIds.length > 0) {
+          const del = await supabase.from('delivery_slots').delete().in('id', oldIds)
+          if (del.error) throw del.error
+        }
+      }
       // zobo availability (price is only changed when there is a single Zobo product)
       const pr = await supabase.from('products').select('id,name')
       if (pr.error) throw pr.error
@@ -401,61 +402,18 @@ export default function AdminApp() {
     }
   }, [loadSettings, toast])
 
-  // Upsert the slots in `next`, delete any slot that was removed.
-  const saveSlots = useCallback(async (next: DeliverySlot[]) => {
-    try {
-      const cur = await supabase.from('delivery_slots').select('id')
-      if (cur.error) throw cur.error
-      const keep = new Set(next.map((s) => s.id).filter((i) => i !== undefined))
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const gone = (cur.data ?? []).map((r: any) => r.id).filter((id: string | number) => !keep.has(id))
-      if (gone.length) {
-        const d = await supabase.from('delivery_slots').delete().in('id', gone)
-        if (d.error) throw d.error
-      }
-      for (let i = 0; i < next.length; i++) {
-        const s = next[i]
-        const row = { label: s.label, is_active: s.active, sort_order: i }
-        const res = s.id !== undefined
-          ? await supabase.from('delivery_slots').update(row).eq('id', s.id)
-          : await supabase.from('delivery_slots').insert({ ...row, batch_day_id: dayIdByKey.current[s.batch] })
-        if (res.error) throw res.error
-      }
-      toast('success', 'Delivery slots saved')
-      await loadSettings()
-    } catch (e) {
-      console.error('Save slots error:', e)
-      toast('error', e instanceof Error ? e.message : 'Could not save delivery slots')
-    }
-  }, [loadSettings, toast])
-
-  // Per-product Zobo prices, keyed by product id.
-  const saveZoboPrices = useCallback(async (prices: Record<string, number>) => {
-    try {
-      for (const [id, price] of Object.entries(prices)) {
-        const product = zoboProducts.find((p) => String(p.id) === id)
-        if (!product) continue
-        const { error } = await supabase.from('products').update({ price }).eq('id', product.id)
-        if (error) throw error
-      }
-      toast('success', 'Zobo prices saved')
-      await loadSettings()
-    } catch (e) {
-      console.error('Save Zobo prices error:', e)
-      toast('error', e instanceof Error ? e.message : 'Could not save Zobo prices')
-    }
-  }, [zoboProducts, loadSettings, toast])
-
   const ctx = useMemo(
-    () => ({ orders, setOrders, settings, setSettings, settingsLoaded, slots, zoboProducts, seen, markSeen, saveSettings, saveSlots, saveZoboPrices, setStage, markPaidManually, confirmFee, reload }),
-    [orders, settings, settingsLoaded, slots, zoboProducts, seen, saveSettings, saveSlots, saveZoboPrices, setStage, markPaidManually, confirmFee, reload],
+    () => ({ orders, setOrders, settings, setSettings, seen, markSeen, slotsByDay, saveSettings, setStage, markPaidManually, confirmFee, reload }),
+    [orders, settings, seen, slotsByDay, saveSettings, setStage, markPaidManually, confirmFee, reload],
   )
 
   if (checking) return <main className="grid min-h-screen place-items-center text-ink-soft">Checking your session…</main>
   if (!authed) return <><Login onIn={() => { setAuthed(true); go('#/admin') }} /><Toasts /></>
 
   const page = route.replace('#/admin', '')
-  const body: ReactNode = page.startsWith('/settings') ? <SettingsPage /> : page.startsWith('/customers') ? <Customers /> : <Orders />
+  const body: ReactNode = page.startsWith('/settings')
+    ? (settingsLoaded ? <SettingsPage /> : <p className="text-ink-soft">Loading settings…</p>)
+    : page.startsWith('/customers') ? <Customers /> : <Orders />
   const active = (to: string) => (to === '#/admin' ? !page.startsWith('/settings') && !page.startsWith('/customers') : route.startsWith(to))
 
   return (

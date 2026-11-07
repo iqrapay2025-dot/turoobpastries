@@ -8,6 +8,13 @@ Deno.serve(async (req) => {
     const { public_token } = await req.json();
     if (!public_token) return json({ error: "Missing token" }, 400);
 
+    const secret = Deno.env.get("PAYSTACK_SECRET_KEY");
+    const siteUrl = (Deno.env.get("SITE_URL") ?? "").replace(/\/+$/, "");
+    if (!secret || !siteUrl) {
+      console.error("PAYSTACK_SECRET_KEY or SITE_URL is not set");
+      return json({ error: "Payments are not configured yet" }, 500);
+    }
+
     const db = createClient(
       Deno.env.get("SUPABASE_URL")!,
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
@@ -33,7 +40,7 @@ Deno.serve(async (req) => {
     const res = await fetch("https://api.paystack.co/transaction/initialize", {
       method: "POST",
       headers: {
-        Authorization: `Bearer ${Deno.env.get("PAYSTACK_SECRET_KEY")}`,
+        Authorization: `Bearer ${secret}`,
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
@@ -41,7 +48,8 @@ Deno.serve(async (req) => {
         amount: order.total * 100, // naira -> kobo
         currency: "NGN",
         reference,
-        callback_url: `${Deno.env.get("SITE_URL")}/order-confirmation?token=${order.public_token}`,
+        // The site uses hash routes, so the return link must be /#/confirmation?token=...
+        callback_url: `${siteUrl}/#/confirmation?token=${order.public_token}`,
         metadata: { order_number: order.order_number, customer: order.customer_name },
       }),
     });

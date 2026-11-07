@@ -1,11 +1,17 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { Search, X, Phone, MapPin, Clock, Store, Bike, Send, CheckCircle2, ChefHat, PackageCheck, Flag, Flame, Droplets, GlassWater } from 'lucide-react'
-import { useApp } from '../store'
 import { Button, EmptyState, cx } from '../components/ui'
 import { BATCHES, naira, type BatchId } from '../data'
-import { useAdmin } from './AdminApp'
 import { Card, StagePill, PayPill } from './ui'
-import { STAGES, items, sub, total, type AOrder, type Stage } from './data'
+import { STAGES, PUFF_PRICE, items, sub, total, type AOrder, type Stage } from './data'
+import { useAdmin } from './adminContext'
+
+const digits = (s: string) => s.replace(/\D/g, '').slice(-10)
+const placedText = (s: string) => {
+  const d = new Date(s)
+  return isNaN(d.getTime()) ? s : d.toLocaleString('en-NG', { day: 'numeric', month: 'short', hour: 'numeric', minute: '2-digit' })
+}
+const live = (o: AOrder) => o.stage !== 'cancelled'
 
 function Stat({ icon, label, value }: { icon: React.ReactNode; label: string; value: string | number }) {
   return (
@@ -20,16 +26,16 @@ function Row({ icon, children }: { icon: React.ReactNode; children: React.ReactN
 function BatchSummary() {
   const { orders, settings } = useAdmin()
   const [b, setB] = useState<BatchId>('fri')
-  const list = orders.filter((o) => o.batch === b)
+  const list = orders.filter((o) => o.batch === b && live(o))
   const sum = (k: 'pepper' | 'plain' | 'zobo') => list.reduce((a, o) => a + o[k], 0)
   const pieces = sum('pepper') + sum('plain')
-  const revenue = list.filter((o) => o.paid).reduce((a, o) => a + total(o, settings.zoboPrice), 0)
+  const revenue = list.filter((o) => o.paid).reduce((a, o) => a + total(o, settings.zoboPrice, settings.puffPrice), 0)
   const full = settings.maxOn && pieces >= settings.max
-  const pct = Math.min(100, Math.round((pieces / settings.max) * 100))
+  const pct = settings.max > 0 ? Math.min(100, Math.round((pieces / settings.max) * 100)) : 0
   return (
     <Card className="p-5 sm:p-6">
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <div><h2 className="text-xl font-semibold">Batch summary</h2><p className="text-sm text-ink/70">What to fry for the selected batch</p></div>
+        <div><h2 className="text-xl font-semibold">Batch summary</h2><p className="text-sm text-ink/70">What to fry for the selected batch (cancelled orders excluded)</p></div>
         <div className="flex gap-1 rounded-full bg-cream p-1">{BATCHES.map((x) => <button key={x.id} onClick={() => setB(x.id)} className={cx('min-h-11 rounded-full px-4 text-sm font-semibold transition', b === x.id ? 'bg-red text-white' : 'text-ink-soft hover:bg-yellow-light')}>{x.day.slice(0, 3)}</button>)}</div>
       </div>
       <div className="mt-5 grid grid-cols-2 gap-3 lg:grid-cols-4">
@@ -53,23 +59,41 @@ function BatchSummary() {
 }
 
 function Drawer({ no, onClose }: { no: string; onClose: () => void }) {
-  const { orders, setOrders, settings } = useAdmin()
-  const { toast } = useApp()
-  const o = orders.find((x) => x.no === no)!
-  const [fee, setFee] = useState(String(o.fee || settings.feeOff))
-  const patch = (p: Partial<AOrder>) => setOrders((l) => l.map((x) => (x.no === no ? { ...x, ...p } : x)))
+  const { orders, settings, setStage, markPaidManually, confirmFee } = useAdmin()
+  const o = orders.find((x) => x.no === no)
+  const [fee, setFee] = useState(String(o?.fee || settings.feeOff))
+  const [busy, setBusy] = useState(false)
+
+  // Refresh the field only when the saved fee changes, so typing isn't overwritten by live updates.
+  useEffect(() => { if (o) setFee(String(o.fee || settings.feeOff)) }, [o?.fee]) // eslint-disable-line react-hooks/exhaustive-deps
+
+  if (!o) return null
+
+  const pp = settings.puffPrice ?? PUFF_PRICE
+
+  const run = async (fn: () => Promise<void>) => {
+    if (busy) return
+    setBusy(true)
+    try { await fn() } finally { setBusy(false) }
+  }
+
   const feeNum = Number(fee)
   const feeErr = !fee || isNaN(feeNum) || feeNum < 0 ? 'Enter a valid amount' : ''
+  const cancelled = o.stage === 'cancelled'
+  const showFee = o.mode === 'delivery' && !o.paid && !cancelled
+  const showManualPaid = !o.paid && o.feeFinal && !cancelled
+
   const next: { stage: Stage; label: string; icon: React.ReactNode; show: boolean }[] = [
     { stage: 'preparing', label: 'Mark as preparing', icon: <ChefHat className="size-4" />, show: o.paid && o.stage === 'paid' },
-    { stage: 'out', label: o.mode === 'delivery' ? 'Out for delivery' : 'Ready for pickup', icon: <PackageCheck className="size-4" />, show: o.stage === 'preparing' },
-    { stage: 'completed', label: 'Mark completed', icon: <Flag className="size-4" />, show: o.stage === 'out' },
+    { stage: o.mode === 'delivery' ? 'out' : 'ready', label: o.mode === 'delivery' ? 'Out for delivery' : 'Ready for pickup', icon: <PackageCheck className="size-4" />, show: o.stage === 'preparing' },
+    { stage: 'completed', label: 'Mark completed', icon: <Flag className="size-4" />, show: o.stage === 'out' || o.stage === 'ready' },
   ]
+
   return (
     <div className="fixed inset-0 z-50 flex justify-end bg-ink/50 backdrop-blur-[2px]" onClick={onClose}>
       <aside role="dialog" aria-modal aria-label={`Order ${o.no}`} onClick={(e) => e.stopPropagation()} className="pop-in mt-12 flex h-[calc(100%-3rem)] w-full flex-col rounded-t-[28px] bg-white shadow-pop sm:mt-0 sm:h-full sm:max-w-md sm:rounded-none sm:rounded-l-[28px]">
         <div className="flex items-start justify-between gap-3 border-b border-ink/10 p-5">
-          <div><p className="font-display text-2xl font-semibold">{o.no}</p><p className="text-sm text-ink/70">{o.placed} · {BATCHES.find((b) => b.id === o.batch)!.day} batch</p><div className="mt-2 flex gap-2"><StagePill o={o} /><PayPill o={o} /></div></div>
+          <div><p className="font-display text-2xl font-semibold">{o.no}</p><p className="text-sm text-ink/70">{placedText(o.placed)} · {BATCHES.find((b) => b.id === o.batch)?.day ?? ''} batch</p><div className="mt-2 flex gap-2"><StagePill o={o} /><PayPill o={o} /></div></div>
           <button aria-label="Close" onClick={onClose} className="grid size-11 place-items-center rounded-full bg-cream hover:bg-yellow-light"><X className="size-5" /></button>
         </div>
         <div className="flex-1 space-y-6 overflow-y-auto p-5">
@@ -85,21 +109,23 @@ function Drawer({ no, onClose }: { no: string; onClose: () => void }) {
           <section>
             <h3 className="mb-2 text-base font-semibold">Items</h3>
             <ul className="divide-y divide-ink/10 text-sm">
-              {o.pepper > 0 && <li className="flex justify-between py-2"><span>{o.pepper}× Puff-Puff (With Pepper)</span><b>{naira(o.pepper * 100)}</b></li>}
-              {o.plain > 0 && <li className="flex justify-between py-2"><span>{o.plain}× Puff-Puff (Without Pepper)</span><b>{naira(o.plain * 100)}</b></li>}
+              {o.pepper > 0 && <li className="flex justify-between py-2"><span>{o.pepper}× Puff-Puff (With Pepper)</span><b>{naira(o.pepper * pp)}</b></li>}
+              {o.plain > 0 && <li className="flex justify-between py-2"><span>{o.plain}× Puff-Puff (Without Pepper)</span><b>{naira(o.plain * pp)}</b></li>}
               {o.zobo > 0 && <li className="flex justify-between py-2"><span>{o.zobo}× Zobo (Bliss Blend)</span><b>{naira(o.zobo * settings.zoboPrice)}</b></li>}
             </ul>
             <dl className="mt-2 space-y-1 border-t border-dashed border-ink/20 pt-3 text-sm">
-              <div className="flex justify-between"><dt>Subtotal</dt><dd>{naira(sub(o, settings.zoboPrice))}</dd></div>
+              <div className="flex justify-between"><dt>Subtotal</dt><dd>{naira(sub(o, settings.zoboPrice, pp))}</dd></div>
               <div className="flex justify-between"><dt>Delivery fee</dt><dd>{o.mode === 'pickup' ? 'Pickup' : o.feeFinal ? naira(o.fee) : naira(o.fee) + ' (estimate)'}</dd></div>
-              <div className="flex justify-between pt-1 font-display text-xl font-semibold"><dt>Total</dt><dd className="text-red">{naira(total(o, settings.zoboPrice))}</dd></div>
+              <div className="flex justify-between pt-1 font-display text-xl font-semibold"><dt>Total</dt><dd className="text-red">{naira(total(o, settings.zoboPrice, pp))}</dd></div>
             </dl>
           </section>
 
-          {o.mode === 'delivery' && !o.paid && (
+          {cancelled && <p className="rounded-2xl bg-cream p-4 text-sm font-semibold text-ink-soft">This order was cancelled (for example, the customer declined the delivery fee).</p>}
+
+          {showFee && (
             <section className="rounded-3xl border-2 border-yellow bg-yellow-light/40 p-4">
               <h3 className="text-base font-semibold">Final delivery fee</h3>
-              <p className="mb-3 text-sm text-ink-soft">Confirm the fee for this address, then send the customer a payment link.</p>
+              <p className="mb-3 text-sm text-ink-soft">Confirm the fee for this address. The customer is emailed a link to accept and pay, or decline.</p>
               <label className="block text-sm font-semibold">Fee (₦)
                 <div className="mt-1.5 flex items-center gap-2">
                   <span className="grid h-12 w-12 place-items-center rounded-2xl bg-white font-bold">₦</span>
@@ -108,15 +134,15 @@ function Drawer({ no, onClose }: { no: string; onClose: () => void }) {
               </label>
               {feeErr && <p className="mt-1 text-sm font-medium text-red">{feeErr}</p>}
               <div className="mt-3 flex flex-wrap gap-2">{[settings.feeOn, settings.feeOff, 300].map((n) => <button key={n} onClick={() => setFee(String(n))} className="min-h-11 rounded-full bg-white px-4 text-sm font-bold hover:bg-yellow">{naira(n)}</button>)}</div>
-              <Button full className="mt-4" disabled={!!feeErr} onClick={() => { patch({ fee: feeNum, feeFinal: true, linkSent: true, stage: 'new' }); toast('success', `Payment link sent to ${o.name.split(' ')[0]} for ${naira(feeNum)} delivery`) }}><Send className="size-4" />{o.linkSent ? 'Resend payment link' : 'Set fee and send payment link'}</Button>
-              {o.linkSent && <p className="mt-2 text-center text-xs text-ink/70">Link sent. Waiting for payment.</p>}
+              <Button full className="mt-4" disabled={!!feeErr || busy} loading={busy} onClick={() => run(() => confirmFee(o.no, feeNum))}><Send className="size-4" />{o.linkSent ? 'Update fee and resend email' : 'Confirm fee and email customer'}</Button>
+              {o.linkSent && <p className="mt-2 text-center text-xs text-ink/70">Customer emailed. Waiting for them to accept and pay.</p>}
             </section>
           )}
         </div>
 
         <div className="space-y-2 border-t border-ink/10 bg-cream/50 p-5">
-          {!o.paid && o.feeFinal && <Button full variant="secondary" onClick={() => { patch({ paid: true, stage: 'paid' }); toast('success', 'Marked as paid') }}><CheckCircle2 className="size-4" />Mark as paid manually</Button>}
-          {next.filter((n) => n.show).map((n) => <Button key={n.stage} full size="lg" onClick={() => { patch({ stage: n.stage }); toast('success', `${o.no}: ${n.label}`) }}>{n.icon}{n.label}</Button>)}
+          {showManualPaid && <Button full variant="secondary" disabled={busy} onClick={() => { if (window.confirm(`Mark ${o.no} as paid? Only do this if you have received the money outside Paystack.`)) run(() => markPaidManually(o.no)) }}><CheckCircle2 className="size-4" />Mark as paid manually</Button>}
+          {next.filter((n) => n.show).map((n) => <Button key={n.stage} full size="lg" disabled={busy} onClick={() => run(async () => { await setStage(o.no, n.stage) })}>{n.icon}{n.label}</Button>)}
           {o.stage === 'completed' && <p className="text-center text-sm font-semibold text-ink/70">This order is complete.</p>}
         </div>
       </aside>
@@ -129,10 +155,15 @@ export default function Orders() {
   const [tab, setTab] = useState<Stage | 'all'>('all')
   const [q, setQ] = useState('')
   const [open, setOpen] = useState<string | null>(null)
-  const counts = useMemo(() => Object.fromEntries(STAGES.map((s) => [s.id, s.id === 'all' ? orders.length : orders.filter((o) => o.stage === s.id).length])), [orders])
-  const list = orders.filter((o) => (tab === 'all' || o.stage === tab) && (!q || [o.name, o.phone, o.no].some((v) => v.toLowerCase().includes(q.toLowerCase().trim()))))
+
+  const inTab = (o: AOrder, t: Stage | 'all') => t === 'all' || (t === 'out' ? o.stage === 'out' || o.stage === 'ready' : o.stage === t)
+  const counts = useMemo(() => Object.fromEntries(STAGES.map((s) => [s.id, orders.filter((o) => inTab(o, s.id)).length])), [orders])
+  const term = q.toLowerCase().trim()
+  const qDigits = digits(q)
+  const list = orders.filter((o) => inTab(o, tab) && (!term || o.name.toLowerCase().includes(term) || o.no.toLowerCase().includes(term) || o.phone.includes(term) || (qDigits.length >= 4 && digits(o.phone).includes(qDigits))))
   const view = (o: AOrder) => { markSeen(o.no); setOpen(o.no) }
-  const isNew = (o: AOrder) => o.stage === 'new' && !seen.has(o.no)
+  const isNew = (o: AOrder) => (o.stage === 'new' || o.stage === 'paid') && !seen.has(o.no)
+  const tot = (o: AOrder) => total(o, settings.zoboPrice, settings.puffPrice)
 
   return (
     <div className="mx-auto max-w-7xl space-y-6">
@@ -158,12 +189,12 @@ export default function Orders() {
               <tbody className="divide-y divide-ink/10">
                 {list.map((o) => (
                   <tr key={o.no} tabIndex={0} onClick={() => view(o)} onKeyDown={(e) => e.key === 'Enter' && view(o)} className="cursor-pointer transition hover:bg-yellow-light/30 focus-visible:bg-yellow-light/40">
-                    <td className="px-4 py-3.5 font-bold">{isNew(o) && <span className="mr-2 inline-block size-2 animate-pulse rounded-full bg-red align-middle" />}{o.no}<span className="block text-xs font-normal text-ink/70">{o.placed}</span></td>
+                    <td className="px-4 py-3.5 font-bold">{isNew(o) && <span className="mr-2 inline-block size-2 animate-pulse rounded-full bg-red align-middle" />}{o.no}<span className="block text-xs font-normal text-ink/70">{placedText(o.placed)}</span></td>
                     <td className="px-4 py-3.5"><b className="font-semibold">{o.name}</b><span className="block text-xs text-ink/70">{o.phone}</span></td>
                     <td className="px-4 py-3.5 text-ink-soft">{items(o)} items<span className="block text-xs text-ink/70">{[o.pepper && `${o.pepper} pepper`, o.plain && `${o.plain} plain`, o.zobo && `${o.zobo} zobo`].filter(Boolean).join(', ')}</span></td>
-                    <td className="px-4 py-3.5">{o.mode === 'pickup' ? 'Pickup' : <>Delivery<span className="block max-w-[170px] truncate text-xs text-ink/70">{o.address}</span></>}</td>
+                    <td className="px-4 py-3.5">{o.mode === 'pickup' ? 'Pickup' : <>Delivery<span className="block max-w-42.5 truncate text-xs text-ink/70">{o.address}</span></>}</td>
                     <td className="px-4 py-3.5">{o.slot}</td>
-                    <td className="px-4 py-3.5 font-bold">{naira(total(o, settings.zoboPrice))}</td>
+                    <td className="px-4 py-3.5 font-bold">{naira(tot(o))}</td>
                     <td className="px-4 py-3.5"><PayPill o={o} /></td>
                     <td className="px-4 py-3.5"><StagePill o={o} /></td>
                   </tr>
@@ -175,7 +206,7 @@ export default function Orders() {
             {list.map((o) => (
               <button key={o.no} onClick={() => view(o)} className="relative rounded-3xl border border-ink/10 bg-white p-4 text-left shadow-[0_2px_12px_-4px_rgba(17,17,17,.08)] transition active:scale-[.99] hover:border-red">
                 {isNew(o) && <span className="absolute right-4 top-4 size-2.5 animate-pulse rounded-full bg-red" />}
-                <div className="flex items-start justify-between gap-2 pr-4"><div><p className="font-display text-lg font-semibold">{o.no}</p><p className="text-xs text-ink/70">{o.placed}</p></div><p className="font-display text-lg font-semibold text-red">{naira(total(o, settings.zoboPrice))}</p></div>
+                <div className="flex items-start justify-between gap-2 pr-4"><div><p className="font-display text-lg font-semibold">{o.no}</p><p className="text-xs text-ink/70">{placedText(o.placed)}</p></div><p className="font-display text-lg font-semibold text-red">{naira(tot(o))}</p></div>
                 <p className="mt-2 font-semibold">{o.name}</p>
                 <p className="text-sm text-ink/70">{items(o)} items · {o.mode === 'pickup' ? 'Pickup' : `Delivery, ${o.slot}`}</p>
                 <div className="mt-3 flex flex-wrap gap-2"><StagePill o={o} /><PayPill o={o} /></div>

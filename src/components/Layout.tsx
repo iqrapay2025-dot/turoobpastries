@@ -131,9 +131,9 @@ export function Footer() {
         <div>
           <h4 className="mb-3 text-lg text-yellow">Say hello</h4>
           <ul className="text-white/80">
-            <li className="flex min-h-11 items-center gap-2"><WhatsAppIcon className="size-4 text-yellow" />WhatsApp: +2347936401</li>
+            <li className="flex min-h-11 items-center gap-2"><WhatsAppIcon className="size-4 text-yellow" />WhatsApp: +2347087936401</li>
             <li><a href="https://instagram.com/turoobpastries" target="_blank" rel="noreferrer" className="flex min-h-11 items-center gap-2 hover:text-yellow"><Camera className="size-4 text-yellow" />@turoobpastries</a></li>
-            <li><a href="mailto:hello@turoob.example" className="flex min-h-11 items-center gap-2 hover:text-yellow"><Mail className="size-4 text-yellow" />hello@turoob.example</a></li>
+            <li><a href="mailto:turoobpastries@gmail.com" className="flex min-h-11 items-center gap-2 hover:text-yellow"><Mail className="size-4 text-yellow" />hello@turoob.example</a></li>
           </ul>
         </div>
       </div>
@@ -160,7 +160,7 @@ export function CartBar() {
   return (
     <div className="fixed inset-x-0 bottom-0 z-40 p-3 lg:hidden">
       <div className="on-dark pop-in mx-auto flex max-w-lg items-center justify-between gap-3 rounded-full bg-ink p-2 pl-5 text-white shadow-pop">
-        <div className="leading-tight"><p className="text-xs text-white/60">{count} item{count > 1 && 's'}</p><p className="font-display text-xl font-semibold text-yellow">{naira(subtotal)}</p></div>
+        <div className="leading-tight"><p className="text-xs text-white/60">{count} {count === 1 ? 'item' : 'items'}</p><p className="font-display text-xl font-semibold text-yellow">{naira(subtotal)}</p></div>
         <Button disabled={closed} onClick={() => go('#/checkout')}>Checkout<ArrowRight className="size-4" /></Button>
       </div>
     </div>

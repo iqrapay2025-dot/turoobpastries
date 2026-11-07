@@ -1,21 +1,42 @@
 import type { ReactNode } from 'react'
 import { cx } from '../components/ui'
-import type { Stage, AOrder } from './data'
+import { STAGE_LABEL, type Stage, type AOrder } from './data'
 
 const TONE: Record<Stage, string> = {
-  new: 'bg-red text-white', awaiting: 'bg-yellow-light text-red-dark', paid: 'bg-ink text-yellow',
-  preparing: 'bg-red-tint text-red-dark', out: 'bg-yellow text-ink', completed: 'bg-ink/8 text-ink/70',
+  new: 'bg-red text-white',
+  awaiting: 'bg-yellow-light text-red-dark',
+  paid: 'bg-ink text-yellow',
+  preparing: 'bg-red-tint text-red-dark',
+  out: 'bg-yellow text-ink',
+  ready: 'bg-yellow text-ink',
+  completed: 'bg-ink/8 text-ink/70',
+  cancelled: 'bg-ink/8 text-ink/60 line-through decoration-ink/30',
 }
+
 export const stageLabel = (s: Stage, mode: AOrder['mode']) =>
-  ({ new: 'New', awaiting: 'Awaiting fee', paid: 'Paid', preparing: 'Preparing', out: mode === 'delivery' ? 'Out for delivery' : 'Ready for pickup', completed: 'Completed' })[s]
+  s === 'out' && mode === 'pickup' ? STAGE_LABEL.ready : STAGE_LABEL[s] ?? s
 
 export function StagePill({ o }: { o: AOrder }) {
-  return <span className={cx('inline-flex items-center gap-1.5 whitespace-nowrap rounded-full px-3 py-1 text-xs font-bold', TONE[o.stage])}>{o.stage === 'new' && <span className="size-1.5 animate-pulse rounded-full bg-white" />}{stageLabel(o.stage, o.mode)}</span>
+  return (
+    <span className={cx('inline-flex items-center gap-1.5 whitespace-nowrap rounded-full px-3 py-1 text-xs font-bold', TONE[o.stage] ?? 'bg-ink/8 text-ink/70')}>
+      {o.stage === 'new' && <span className="size-1.5 animate-pulse rounded-full bg-white" />}
+      {stageLabel(o.stage, o.mode)}
+    </span>
+  )
 }
+
 export function PayPill({ o }: { o: AOrder }) {
-  return o.paid
-    ? <span className="inline-flex rounded-full bg-ink px-2.5 py-1 text-xs font-bold text-yellow">Paid</span>
-    : <span className={cx('inline-flex rounded-full px-2.5 py-1 text-xs font-bold', o.linkSent ? 'bg-yellow-light text-red-dark' : 'bg-ink/8 text-ink/70')}>{o.linkSent ? 'Link sent' : 'Unpaid'}</span>
+  if (o.paid) return <span className="inline-flex rounded-full bg-ink px-2.5 py-1 text-xs font-bold text-yellow">Paid</span>
+  if (o.stage === 'cancelled') return <span className="inline-flex rounded-full bg-ink/8 px-2.5 py-1 text-xs font-bold text-ink/70">Not paid</span>
+  const label =
+    o.feeStatus === 'accepted' ? 'Awaiting payment'
+    : o.linkSent ? 'Fee sent'
+    : 'Unpaid'
+  return (
+    <span className={cx('inline-flex rounded-full px-2.5 py-1 text-xs font-bold', o.linkSent ? 'bg-yellow-light text-red-dark' : 'bg-ink/8 text-ink/70')}>
+      {label}
+    </span>
+  )
 }
 
 export function Card({ children, className }: { children: ReactNode; className?: string }) {

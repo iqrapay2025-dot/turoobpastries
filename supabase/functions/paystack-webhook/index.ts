@@ -18,7 +18,11 @@ async function hmacSha512(secret: string, body: string) {
 
 Deno.serve(async (req) => {
   const raw = await req.text();
-  const secret = Deno.env.get("PAYSTACK_SECRET_KEY")!;
+  const secret = Deno.env.get("PAYSTACK_SECRET_KEY");
+  if (!secret) {
+    console.error("PAYSTACK_SECRET_KEY is not set");
+    return new Response("Server not configured", { status: 500 });
+  }
 
   const expected = await hmacSha512(secret, raw);
   if (expected !== req.headers.get("x-paystack-signature")) {
@@ -40,40 +44,59 @@ Deno.serve(async (req) => {
     .insert({ reference, event_type: event.event, payload: event });
   if (dupe) return new Response("duplicate", { status: 200 });
 
-  // Never trust the webhook body alone: verify with Paystack.
-  const vres = await fetch(
-    `https://api.paystack.co/transaction/verify/${encodeURIComponent(reference)}`,
-    { headers: { Authorization: `Bearer ${secret}` } }
-  );
-  const v = await vres.json();
-  if (!v.status || v.data.status !== "success") {
-    return new Response("not successful", { status: 200 });
-  }
+  // If we cannot finish, release the lock so Paystack's retry is processed again.
+  const release = () =>
+    db.from("payment_events").delete().eq("reference", reference).eq("event_type", event.event);
 
-  const { data: order } = await db
-    .from("orders")
-    .select("*, order_items(*)")
-    .eq("paystack_reference", reference)
-    .single();
-  if (!order) return new Response("order not found", { status: 200 });
+  try {
+    // Never trust the webhook body alone: verify with Paystack.
+    const vres = await fetch(
+      `https://api.paystack.co/transaction/verify/${encodeURIComponent(reference)}`,
+      { headers: { Authorization: `Bearer ${secret}` } }
+    );
+    const v = await vres.json();
+    if (!v.status || v.data.status !== "success") {
+      await release();
+      return new Response("not successful", { status: 500 });
+    }
 
-  if (v.data.amount !== order.total * 100) {
-    console.error("Amount mismatch", reference, v.data.amount, order.total);
-    await db.from("orders").update({ payment_status: "failed" }).eq("id", order.id);
-    return new Response("amount mismatch", { status: 200 });
-  }
-
-  if (order.payment_status !== "paid") {
-    await db
+    const { data: order } = await db
       .from("orders")
-      .update({ payment_status: "paid", paid_at: new Date().toISOString() })
-      .eq("id", order.id);
+      .select("*, order_items(*)")
+      .eq("paystack_reference", reference)
+      .single();
+    if (!order) {
+      await release();
+      return new Response("order not found", { status: 500 });
+    }
 
-    const customer = paidEmail(order, order.order_items);
-    await sendEmail({ to: order.customer_email, ...customer });
-    const team = Deno.env.get("TEAM_EMAIL");
-    if (team) await sendEmail({ to: team, ...teamAlertEmail(order, order.order_items, "paid") });
+    if (v.data.amount !== order.total * 100) {
+      console.error("Amount mismatch", reference, v.data.amount, order.total);
+      await db.from("orders").update({ payment_status: "failed" }).eq("id", order.id);
+      return new Response("amount mismatch", { status: 200 });
+    }
+
+    if (order.payment_status !== "paid") {
+      const { error: upErr } = await db
+        .from("orders")
+        .update({ payment_status: "paid", paid_at: new Date().toISOString() })
+        .eq("id", order.id);
+      if (upErr) {
+        console.error("Could not mark order paid", upErr);
+        await release();
+        return new Response("update failed", { status: 500 });
+      }
+
+      const customer = paidEmail(order, order.order_items);
+      await sendEmail({ to: order.customer_email, ...customer });
+      const team = Deno.env.get("TEAM_EMAIL");
+      if (team) await sendEmail({ to: team, ...teamAlertEmail(order, order.order_items, "paid") });
+    }
+
+    return new Response("ok", { status: 200 });
+  } catch (e) {
+    console.error(e);
+    await release();
+    return new Response("error", { status: 500 });
   }
-
-  return new Response("ok", { status: 200 });
 });

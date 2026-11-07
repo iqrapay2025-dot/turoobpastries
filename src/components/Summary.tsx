@@ -1,29 +1,60 @@
 import { ShoppingBag } from 'lucide-react'
 import { useApp } from '../store'
-import { LINES, naira } from '../data'
+import { naira } from '../data'
 import { Button, EmptyState } from './ui'
 
-export function Lines({ items }: { items: { name: string; qty: number; price: number }[] }) {
-  return <ul className="divide-y divide-yellow-light">{items.map((i) => <li key={i.name} className="flex justify-between gap-3 py-2.5 text-sm"><span><b className="font-semibold">{i.qty}×</b> {i.name}</span><span className="font-semibold">{naira(i.qty * i.price)}</span></li>)}</ul>
+type Line = { id?: string; name: string; qty: number; price: number }
+
+export function Lines({ items }: { items: Line[] }) {
+  return (
+    <ul className="divide-y divide-yellow-light">
+      {items.map((i, idx) => (
+        <li key={i.id ?? `${i.name}-${idx}`} className="flex justify-between gap-3 py-2.5 text-sm">
+          <span><b className="font-semibold">{i.qty}×</b> {i.name}</span>
+          <span className="font-semibold">{naira(i.qty * i.price)}</span>
+        </li>
+      ))}
+    </ul>
+  )
 }
 
-export function Totals({ subtotal, fee, pending }: { subtotal: number; fee: number | null; pending?: boolean }) {
+/**
+ * fee:
+ *  - number          -> the confirmed fee
+ *  - 'pickup'        -> "Free (pickup)"
+ *  - 'tbc'           -> delivery, fee not set yet, no estimate shown
+ *  - { estimate }    -> delivery, showing an estimate that the team will confirm
+ *  - 'none'          -> fulfilment not chosen yet (cart panel)
+ */
+export type FeeProp = number | 'pickup' | 'tbc' | 'none' | { estimate: number }
+
+export function Totals({ subtotal, fee }: { subtotal: number; fee: FeeProp }) {
+  const isEstimate = typeof fee === 'object'
+  const feeText =
+    typeof fee === 'number' ? naira(fee)
+    : typeof fee === 'object' ? `${naira(fee.estimate)} (estimate)`
+    : fee === 'pickup' ? 'Free (pickup)'
+    : fee === 'tbc' ? 'To be confirmed'
+    : 'Calculated at checkout'
+  const feeAmount = typeof fee === 'number' ? fee : typeof fee === 'object' ? fee.estimate : 0
+  const label = typeof fee === 'number' || fee === 'pickup' ? 'Total' : isEstimate ? 'Estimated total' : 'Total so far'
+
   return (
     <dl className="space-y-2 border-t-2 border-dashed border-yellow pt-4 text-sm">
       <div className="flex justify-between"><dt>Subtotal</dt><dd className="font-semibold">{naira(subtotal)}</dd></div>
-      <div className="flex justify-between"><dt>Delivery fee</dt><dd className="font-semibold">{fee === null ? 'Free (pickup)' : naira(fee) + (pending ? ' (to confirm)' : '')}</dd></div>
-      <div className="flex items-end justify-between pt-2"><dt className="font-display text-lg font-semibold">Total</dt><dd className="font-display text-3xl font-semibold text-red">{naira(subtotal + (fee ?? 0))}</dd></div>
+      <div className="flex justify-between"><dt>Delivery fee</dt><dd className="font-semibold">{feeText}</dd></div>
+      <div className="flex items-end justify-between pt-2">
+        <dt className="font-display text-lg font-semibold">{label}</dt>
+        <dd className="font-display text-3xl font-semibold text-red">{naira(subtotal + feeAmount)}</dd>
+      </div>
     </dl>
   )
 }
 
-export function CartItems() {
-  return null
-}
-
 export function CartPanel({ cta }: { cta?: boolean }) {
-  const { cart, subtotal, count, go, closed } = useApp()
-  const items = LINES.filter((p) => cart[p.id]).map((p) => ({ name: p.name, qty: cart[p.id], price: p.price }))
+  const { cart, products, subtotal, count, go, closed } = useApp()
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const items: Line[] = products.filter((p: any) => cart[p.id]).map((p: any) => ({ id: p.id, name: p.name, qty: cart[p.id], price: Number(p.price) }))
   return (
     <aside className="rounded-[28px] bg-white p-6 shadow-soft">
       <h3 className="mb-3 flex items-center gap-2 text-xl font-semibold"><ShoppingBag className="size-5 text-red" />Your order</h3>
@@ -32,7 +63,7 @@ export function CartPanel({ cta }: { cta?: boolean }) {
       ) : (
         <>
           <Lines items={items} />
-          <div className="mt-3"><Totals subtotal={subtotal} fee={null} /></div>
+          <div className="mt-3"><Totals subtotal={subtotal} fee="none" /></div>
           {cta && <Button full size="lg" className="mt-5" disabled={closed} onClick={() => go('#/checkout')}>{closed ? 'Orders closed' : 'Checkout'}</Button>}
         </>
       )}

@@ -63,7 +63,7 @@ function summary(o: any, items: any[]) {
   <p>Subtotal: ${naira(o.subtotal)}<br>Delivery: ${naira(o.delivery_fee)}<br><b>Total: ${naira(o.total)}</b></p>`;
 }
 
-const site = () => Deno.env.get("SITE_URL")!;
+const site = () => (Deno.env.get("SITE_URL") ?? "").replace(/\/+$/, "");
 
 // deno-lint-ignore no-explicit-any
 export function orderReceivedEmail(o: any, items: any[]) {
@@ -79,7 +79,8 @@ export function orderReceivedEmail(o: any, items: any[]) {
 
 // deno-lint-ignore no-explicit-any
 export function feeConfirmEmail(o: any, items: any[]) {
-  const link = `${site()}/confirm-fee/${o.public_token}`;
+  // The site uses hash routes, so the link must be /#/fee?token=...
+  const link = `${site()}/#/fee?token=${o.public_token}`;
   return {
     subject: `Confirm your delivery fee for ${o.order_number}`,
     html: wrap(

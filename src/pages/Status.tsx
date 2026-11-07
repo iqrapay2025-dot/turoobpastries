@@ -1,37 +1,73 @@
 import { useState } from 'react'
 import { Search } from 'lucide-react'
-import { useApp, type Order } from '../store'
+import { useApp } from '../store'
 import { Badge, Button, Field, Notice, Tracker } from '../components/ui'
 import { stepsFor } from './Confirmation'
 import { naira } from '../data'
 import { trackOrder } from '../lib/supabase'
+import { stageIndex, prettyDate, messageOf, type OrderView } from '../lib/orderView'
 
-const norm = (s: string) => s.replace(/\D/g, '').replace(/^234/, '0')
+// Shape returned by the track_order database function.
+type TrackView = {
+  order_number: string
+  order_status: OrderView['order_status']
+  payment_status: OrderView['payment_status']
+  fee_status: OrderView['fee_status']
+  fulfilment: 'pickup' | 'delivery'
+  batch_date: string
+  batch_label: string | null
+  delivery_slot: string | null
+  total: number
+  delivery_fee: number
+  items: Array<{ name: string; quantity: number; line_total: number }>
+}
+
 export default function Status() {
-  const { go, toast } = useApp()
-  const [num, setNum] = useState('')
-  const [phone, setPhone] = useState('')
-  const [res, setRes] = useState<Order | 'none' | null>(null)
+  const { go, toast, order } = useApp()
+  // Pre-fill from the last order placed on this device.
+  const [num, setNum] = useState(order?.number ?? '')
+  const [phone, setPhone] = useState(order?.phone ?? '')
+  const [res, setRes] = useState<TrackView | 'none' | null>(null)
   const [loading, setLoading] = useState(false)
+
   const find = async (e: React.FormEvent) => {
-    e.preventDefault(); setLoading(true); setRes(null)
+    e.preventDefault()
+    if (phone.replace(/\D/g, '').length < 10) {
+      toast('error', 'Enter the phone number you used for the order.')
+      return
+    }
+    setLoading(true)
+    setRes(null)
     try {
-      const data = await trackOrder(num.trim(), phone.trim())
-      if (data) {
-        const mapped: Order = {
-          number: data.order_number || data.id, name: data.customer_name, phone: data.customer_phone,
-          email: data.customer_email,
-          items: data.order_items?.map((oi: any) => ({ id: oi.product_id, name: oi.product_name, qty: oi.quantity, price: oi.unit_price })) || [],
-          mode: data.fulfilment_mode || 'pickup', zone: data.delivery_zone || 'on', address: data.delivery_address || '',
-          landmark: data.delivery_landmark || '', slot: data.delivery_slot || '', notes: data.order_notes || '',
-          subtotal: data.subtotal || 0, fee: data.delivery_fee || 0, total: data.total_amount || 0,
-          status: data.order_status === 'paid' ? 3 : data.order_status === 'preparing' ? 2 : data.order_status === 'awaiting_fee' ? 1 : 0,
-          feeConfirmed: data.fee_status === 'confirmed' || data.fee_status === 'accepted', batch: data.batch_day || 'fri',
-        }
-        setRes(mapped)
-      } else { setRes('none') }
-    } catch (e: any) { toast('error', e.message || 'Failed to find order'); setRes('none') } finally { setLoading(false) }
+      const data = (await trackOrder(num.trim(), phone.trim())) as TrackView | null
+      setRes(data ?? 'none')
+    } catch (err) {
+      toast('error', messageOf(err))
+      setRes('none')
+    } finally {
+      setLoading(false)
+    }
   }
+
+  const r = res && res !== 'none' ? res : null
+  const cancelled = r?.order_status === 'cancelled'
+  const paid = r?.payment_status === 'paid'
+  const step = r ? stageIndex(r.order_status) : 0
+  // The secret order link is only known on the device that placed the order.
+  const token = r && order && order.number === r.order_number ? (order.public_token as string | undefined) : undefined
+
+  // What the customer should do next, if anything.
+  let next: { title: string; text: string } | null = null
+  if (r && !cancelled && !paid) {
+    if (r.fulfilment === 'delivery' && r.fee_status === 'pending_review') {
+      next = { title: 'We’re confirming your delivery fee', text: 'We’ll email you a link to accept the fee and pay. Check your inbox (and spam folder).' }
+    } else if (r.fulfilment === 'delivery' && r.fee_status === 'confirmed') {
+      next = { title: `Your delivery fee is ${naira(r.delivery_fee)}`, text: 'Use the link we emailed you to accept it and pay.' }
+    } else {
+      next = { title: 'Payment not completed yet', text: 'Your order is saved but not paid. Pay to confirm it.' }
+    }
+  }
+
   return (
     <main className="mx-auto max-w-xl px-4 pb-16 pt-10 sm:px-6">
       <h1 className="text-4xl font-semibold sm:text-5xl">Track your order</h1>
@@ -40,16 +76,60 @@ export default function Status() {
         <Field label="Order number" value={num} onChange={(e) => setNum(e.target.value)} placeholder="TRB-1042" required />
         <Field label="Phone number" type="tel" value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="0801 234 5678" required />
         <Button full size="lg" type="submit" loading={loading}><Search className="size-4" />Check status</Button>
-        <p className="text-center text-xs text-ink/70">Use your order number and phone number to track.</p>
+        <p className="text-center text-xs text-ink/70">Use the phone number you gave when ordering.</p>
       </form>
-      {res === 'none' && <div className="mt-5"><Notice tone="error" title="We could not find that order">Check your order number and phone number, then try again. Still stuck? Message us on WhatsApp.</Notice></div>}
-      {res && res !== 'none' && (
+
+      {res === 'none' && (
+        <div className="mt-5">
+          <Notice tone="error" title="We could not find that order">Check your order number and phone number, then try again. Still stuck? Message us on WhatsApp.</Notice>
+        </div>
+      )}
+
+      {r && (
         <section className="pop-in mt-5 rounded-[28px] bg-white p-6 shadow-soft">
           <div className="mb-5 flex items-start justify-between gap-3">
-            <div><p className="text-xs font-bold uppercase tracking-wider text-red">Order</p><p className="font-display text-2xl font-semibold">{res.number}</p><p className="text-sm text-ink/70">{res.items.reduce((a, i) => a + i.qty, 0)} items · {naira(res.total)}</p></div>
-            <div className="flex flex-col items-end gap-2"><Badge tone="paid">Paid</Badge><Badge tone="preparing">{stepsFor(res.mode)[res.status]}</Badge></div>
+            <div>
+              <p className="text-xs font-bold uppercase tracking-wider text-red">Order</p>
+              <p className="font-display text-2xl font-semibold">{r.order_number}</p>
+              <p className="text-sm text-ink/70">
+                {r.items.reduce((a, i) => a + i.quantity, 0)} items · {naira(r.total)}
+              </p>
+              <p className="mt-1 text-sm text-ink/70">
+                {r.batch_label ? `${r.batch_label}, ` : ''}{prettyDate(r.batch_date)}
+                {r.fulfilment === 'delivery' && r.delivery_slot ? ` · ${r.delivery_slot}` : ''}
+              </p>
+            </div>
+            <div className="flex flex-col items-end gap-2">
+              {paid ? <Badge tone="paid">Paid</Badge>
+                : r.payment_status === 'failed' ? <Badge tone="closed">Payment failed</Badge>
+                  : r.payment_status === 'refunded' ? <Badge tone="closed">Refunded</Badge>
+                    : <Badge tone="soon">Awaiting payment</Badge>}
+              {cancelled
+                ? <Badge tone="closed">Cancelled</Badge>
+                : <Badge tone="preparing">{stepsFor(r.fulfilment)[step]}</Badge>}
+            </div>
           </div>
-          <Tracker steps={stepsFor(res.mode)} current={res.status} />
+
+          <ul className="mb-5 space-y-1 text-sm text-ink-soft">
+            {r.items.map((i) => (
+              <li key={i.name} className="flex justify-between gap-3"><span>{i.name} × {i.quantity}</span><span>{naira(i.line_total)}</span></li>
+            ))}
+          </ul>
+
+          {cancelled ? (
+            <Notice title="This order was cancelled">You can place a new order any time.</Notice>
+          ) : (
+            <Tracker steps={stepsFor(r.fulfilment)} current={step} />
+          )}
+
+          {next && (
+            <div className="mt-5 space-y-3">
+              <Notice title={next.title}>{next.text}</Notice>
+              {token && (r.fulfilment === 'pickup' || r.fee_status === 'accepted') && (
+                <Button full size="lg" onClick={() => go(`#/confirmation?token=${token}`)}>Pay now</Button>
+              )}
+            </div>
+          )}
         </section>
       )}
     </main>

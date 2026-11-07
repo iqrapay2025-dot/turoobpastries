@@ -111,7 +111,10 @@ const readJson = <T,>(key: string, fallback: T): T => {
 
 /* --------------------------------------------------------------- provider */
 export const StoreProvider = ({ children }: { children: ReactNode }) => {
-  const [batch, setBatch] = useState<BatchId>('fri')
+    const [batch, setBatch] = useState<BatchId>(() => {
+    const saved = readJson<string>('turoob_batch', 'fri')
+    return saved === 'sat' || saved === 'sun' ? saved : 'fri'
+  })
   const [cart, setCart] = useState<Record<string, number>>(() => readJson('turoob_cart', {}))
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const [order, setOrderState] = useState<any>(() => readJson('turoob_last_order', null))
@@ -146,6 +149,7 @@ export const StoreProvider = ({ children }: { children: ReactNode }) => {
   }, [])
 
   /* ---- cart persistence ---- */
+   /* ---- cart persistence ---- */
   useEffect(() => {
     try {
       localStorage.setItem('turoob_cart', JSON.stringify(cart))

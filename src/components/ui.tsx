@@ -18,7 +18,7 @@ export function Button({ variant = 'primary', size = 'md', loading, full, classN
     <button
       disabled={disabled || loading}
       className={cx('group/btn inline-flex items-center justify-center gap-2 rounded-full font-semibold transition duration-200 [&>svg:last-child:not(.spin)]:transition-transform hover:[&>svg:last-child:not(.spin)]:translate-x-1 focus-visible:outline-3 focus-visible:outline-offset-3 focus-visible:outline-red',
-        s, v, full && 'w-full', (disabled || loading) && '!bg-ink/10 !text-ink/40 !shadow-none !border-ink/10 hover:!bg-ink/10 hover:!translate-y-0', className)}
+        s, v, full && 'w-full', (disabled || loading) && 'bg-ink/10! text-ink/40! shadow-none! border-ink/10! hover:bg-ink/10! hover:translate-y-0!', className)}
       {...p}>
       {loading && <Loader2 className="spin size-4" />}
       {children}
@@ -115,7 +115,7 @@ export function Toasts() {
   const { toasts } = useApp()
   const icon = { success: <Check className="size-4" />, error: <AlertCircle className="size-4" />, info: <Info className="size-4" /> }
   return (
-    <div className="pointer-events-none fixed inset-x-0 top-20 z-[70] flex flex-col items-center gap-2 px-4">
+    <div className="pointer-events-none fixed inset-x-0 top-20 z-70 flex flex-col items-center gap-2 px-4">
       {toasts.map((t) => (
         <div key={t.id} className="pop-in pointer-events-auto flex items-center gap-3 rounded-full bg-ink px-5 py-3 text-sm font-medium text-white shadow-pop">
           <span className={cx('grid size-6 place-items-center rounded-full text-ink', t.kind === 'error' ? 'bg-red-light' : 'bg-yellow')}>{icon[t.kind]}</span>{t.text}
@@ -128,7 +128,7 @@ export function Toasts() {
 export function Modal({ open, onClose, title, children }: { open: boolean; onClose: () => void; title: string; children: ReactNode }) {
   if (!open) return null
   return (
-    <div className="fixed inset-0 z-[80] grid place-items-end bg-ink/60 p-0 backdrop-blur-sm sm:place-items-center sm:p-4" onClick={onClose}>
+    <div className="fixed inset-0 z-80 grid place-items-end bg-ink/60 p-0 backdrop-blur-sm sm:place-items-center sm:p-4" onClick={onClose}>
       <div role="dialog" aria-modal className="pop-in w-full max-w-md rounded-t-[28px] bg-white p-6 shadow-pop sm:rounded-[28px]" onClick={(e) => e.stopPropagation()}>
         <div className="mb-3 flex items-start justify-between gap-4">
           <h3 className="text-2xl font-semibold">{title}</h3>
