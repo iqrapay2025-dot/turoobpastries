@@ -272,6 +272,7 @@ export default function AdminApp() {
           batch: batchKeyById.current[o.batch_day_id] ?? 'fri',
           placed: o.created_at ?? '',
           notes: o.notes ?? '',
+                    dbTotal: Number(o.total ?? 0),
         } as AOrder
       })
       ordersRef.current = mapped

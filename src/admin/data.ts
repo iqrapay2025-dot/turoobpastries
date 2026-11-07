@@ -10,6 +10,7 @@ export type AOrder = {
   fee: number; feeFinal: boolean; linkSent: boolean; paid: boolean; stage: Stage
   batch: BatchId; placed: string; notes: string
   feeStatus?: string // optional: raw fee_status from the database, if AdminApp passes it
+    dbTotal?: number // the total stored in the database (what was actually charged)
 }
 
 export type Settings = {

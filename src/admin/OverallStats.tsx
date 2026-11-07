@@ -1,7 +1,24 @@
-import { useMemo } from 'react'
+import { useMemo, useState } from 'react'
+import { cx } from '../components/ui'
 import { useAdmin } from './adminContext'
-import { total, PUFF_PRICE, type AOrder } from './data'
+import { total, type AOrder } from './data'
 import { naira } from '../data'
+
+type Range = 'week' | 'month' | 'all'
+const RANGES: { id: Range; label: string }[] = [
+  { id: 'week', label: 'Last 7 days' },
+  { id: 'month', label: 'This month' },
+  { id: 'all', label: 'All time' },
+]
+
+const inRange = (o: AOrder, r: Range) => {
+  if (r === 'all') return true
+  const d = new Date(o.placed)
+  if (isNaN(d.getTime())) return false
+  const now = new Date()
+  if (r === 'week') return now.getTime() - d.getTime() <= 7 * 24 * 60 * 60 * 1000
+  return d.getFullYear() === now.getFullYear() && d.getMonth() === now.getMonth()
+}
 
 function Stat({ label, value, hint }: { label: string; value: string; hint?: string }) {
   return (
@@ -15,17 +32,19 @@ function Stat({ label, value, hint }: { label: string; value: string; hint?: str
 
 export default function OverallStats() {
   const { orders, settings } = useAdmin()
+  const [range, setRange] = useState<Range>('month')
 
   const s = useMemo(() => {
-    const puff = settings.puffPrice ?? PUFF_PRICE
-    const sum = (list: AOrder[]) => list.reduce((a, o) => a + total(o, settings.zoboPrice, puff), 0)
-    const live = orders.filter((o) => o.stage !== 'cancelled')
+    const amount = (o: AOrder) => o.dbTotal ?? total(o, settings.zoboPrice, settings.puffPrice)
+    const sum = (list: AOrder[]) => list.reduce((a, o) => a + amount(o), 0)
+    const scoped = orders.filter((o) => inRange(o, range))
+    const live = scoped.filter((o) => o.stage !== 'cancelled')
     const paid = live.filter((o) => o.paid)
     const unpaid = live.filter((o) => !o.paid)
     const collected = sum(paid)
     return {
       count: live.length,
-      cancelled: orders.length - live.length,
+      cancelled: scoped.length - live.length,
       paidCount: paid.length,
       collected,
       awaiting: sum(unpaid),
@@ -36,11 +55,18 @@ export default function OverallStats() {
       pickups: live.filter((o) => o.mode === 'pickup').length,
       deliveries: live.filter((o) => o.mode === 'delivery').length,
     }
-  }, [orders, settings])
+  }, [orders, settings, range])
 
   return (
     <section aria-label="Overall summary" className="mb-6">
-      <h2 className="mb-3 text-xl font-semibold">Overall summary</h2>
+      <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
+        <h2 className="text-xl font-semibold">Overall summary</h2>
+        <div className="flex gap-1 rounded-full bg-cream p-1">
+          {RANGES.map((r) => (
+            <button key={r.id} onClick={() => setRange(r.id)} className={cx('min-h-11 rounded-full px-4 text-sm font-semibold transition', range === r.id ? 'bg-red text-white' : 'text-ink-soft hover:bg-yellow-light')}>{r.label}</button>
+          ))}
+        </div>
+      </div>
       <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
         <Stat label="Total orders" value={String(s.count)} hint={s.cancelled ? `${s.cancelled} cancelled not counted` : `${s.paidCount} paid`} />
         <Stat label="Money collected" value={naira(s.collected)} hint={`${s.paidCount} paid orders`} />
