@@ -1,10 +1,13 @@
 {
-  "description": "A puff-puff pre-order site for University of Ilorin students to browse batches, schedule pickup or delivery, and track orders with clear pricing.",
+  "description": "Hot puff-puff, fried fresh in small batches. Order ahead for pickup or campus delivery at the University of Ilorin.",
   "robots": {
     "index": false
   },
   "accessibility": {
     "addBypassLinks": false,
     "ignoreReducedMotion": false
+  },
+  "icons": {
+    "icon": "/favicon.ico"
   }
 }
