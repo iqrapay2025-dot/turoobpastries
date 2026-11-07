@@ -93,7 +93,7 @@ function Login({ onIn }: { onIn: () => void }) {
           <div className="lg:hidden"><Logo /></div>
           <div><h2 className="text-3xl font-semibold">Team login</h2><p className="mt-1 text-ink-soft">Sign in to manage this week's orders.</p></div>
           {err && <div role="alert" className="flex items-center gap-2 rounded-2xl bg-red-tint p-3 text-sm font-medium text-red-dark"><AlertCircle className="size-4 shrink-0" />{err}</div>}
-          <Field label="Email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="you@turoob.example" required autoComplete="email" />
+          <Field label="Email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="turoobpastries@gmail.com" required autoComplete="email" />
           <div className="relative">
             <Field label="Password" type={show ? 'text' : 'password'} value={pw} onChange={(e) => setPw(e.target.value)} placeholder="Your password" required autoComplete="current-password" valid={false} />
             <button type="button" aria-label={show ? 'Hide password' : 'Show password'} onClick={() => setShow(!show)} className="absolute right-1 top-6.5 grid size-11 place-items-center text-ink/70 hover:text-red">{show ? <EyeOff className="size-5" /> : <Eye className="size-5" />}</button>

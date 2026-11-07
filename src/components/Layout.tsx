@@ -19,7 +19,7 @@ export function Logo({ light }: { light?: boolean }) {
   return (
     <a href="#/" className="flex shrink-0 items-center gap-2">
       <img src={logo} alt="Turoob Pastries" className="h-11 w-auto object-contain transition duration-300 hover:-rotate-3 hover:scale-105" />
-      <span className={cx('font-display text-xl font-semibold leading-none max-[380px]:hidden', light && 'text-white', !light && 'text-ink')}>Turoob<span className="block text-xs font-medium tracking-[.2em] text-red uppercase">Pastries</span></span>
+      <span className={cx('font-display text-xl font-semibold leading-none max-[380px]:hidden', light && 'text-white', !light && 'text-ink')}>Turoob<span className={cx('block text-xs font-medium tracking-[.2em] uppercase', light ? 'text-yellow' : 'text-red')}>Pastries</span></span>
     </a>
   )
 }
