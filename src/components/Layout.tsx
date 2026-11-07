@@ -3,7 +3,7 @@ import { ShoppingBag, Menu, X, Camera, Mail, ShieldCheck, ArrowRight } from 'luc
 import { useApp } from '../store'
 import { Button, Toasts, cx } from './ui'
 import { naira } from '../data'
-import logo from '.../../public/logo.jpg'
+import logo from '../assets/logo.png'
 
 export const WA = 'https://wa.me/2347936401?text=Hi%20Turoob%20Pastries!'
 
