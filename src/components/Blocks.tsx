@@ -6,13 +6,11 @@ import { naira } from '../data'
 /* ------------------------------------------------------------- helpers */
 const ID_BY_DOW: Record<number, BatchId> = { 5: 'fri', 6: 'sat', 0: 'sun' }
 
-const fmt = (iso: string) =>
-  new Date(iso).toLocaleString('en-NG', {
-    weekday: 'long',
-    hour: 'numeric',
-    minute: '2-digit',
-    timeZone: 'Africa/Lagos',
-  })
+const fmtDay = (iso: string) =>
+  new Date(iso).toLocaleDateString('en-NG', { weekday: 'long', timeZone: 'Africa/Lagos' })
+
+const fmtTime = (iso: string) =>
+  new Date(iso).toLocaleTimeString('en-NG', { hour: 'numeric', minute: '2-digit', hour12: true, timeZone: 'Africa/Lagos' })
 
 /* ----------------------------------------------------------- countdown */
 // Pass `to` to count down to a specific time. With no argument it uses the store target.
@@ -92,7 +90,7 @@ export function BatchBanner() {
   if (closed) {
     if (comingSoon) closedMessage = b.note || 'This batch is not open for orders yet.'
     else if (soldOut) closedMessage = 'Sold out for this batch. See you next time!'
-    else if (notYetOpen) closedMessage = `Orders open ${fmt(b.opens_at)} and close ${fmt(b.cutoff_at)}.`
+    else if (notYetOpen) closedMessage = `Orders open ${fmtDay(b.opens_at)} at ${fmtTime(b.opens_at)} and close ${fmtDay(b.cutoff_at)} at ${fmtTime(b.cutoff_at)}.`
     else closedMessage = 'Orders are closed for this batch.'
   }
 
@@ -193,10 +191,11 @@ export function BatchPicker({ compact }: { compact?: boolean }) {
   const { batch, setBatch, batchRows, batchError, batchOpen } = useApp()
 
   if (batchError) return <p className="rounded-2xl bg-white p-4 text-sm font-semibold text-red-dark shadow-soft">Couldn’t load the batch days. Please refresh the page.</p>
-  const ORDER: Record<BatchId, number> = { fri: 0, sat: 1, sun: 2 }
+    const ORDER: Record<BatchId, number> = { fri: 0, sat: 1, sun: 2 }
   const tabs = batchRows
     .filter((r) => ID_BY_DOW[r.day_of_week])
     .sort((a, b) => ORDER[ID_BY_DOW[a.day_of_week]] - ORDER[ID_BY_DOW[b.day_of_week]])
+  if (tabs.length === 0) return <p className="text-sm text-ink-soft">Checking batch days…</p>
   if (tabs.length === 0) return <p className="text-sm text-ink-soft">Checking batch days…</p>
 
   const cols = tabs.length === 1 ? 'sm:grid-cols-1' : tabs.length === 2 ? 'sm:grid-cols-2' : 'sm:grid-cols-3'
@@ -218,7 +217,7 @@ export function BatchPicker({ compact }: { compact?: boolean }) {
             {r.serving_time_label && <p className="mt-2 text-sm text-ink-soft">{r.serving_time_label}</p>}
             {!soon && (
               <p className="mt-1 flex items-start gap-1.5 text-xs font-semibold text-red">
-                <Clock className="mt-0.5 size-3.5 shrink-0" />Order by {fmt(r.cutoff_at)}
+                <Clock className="mt-0.5 size-3.5 shrink-0" />Orders close {fmtDay(r.cutoff_at)} at {fmtTime(r.cutoff_at)}
               </p>
             )}
           </button>
