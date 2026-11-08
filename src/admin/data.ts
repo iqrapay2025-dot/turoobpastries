@@ -11,11 +11,12 @@ export type AOrder = {
   batch: BatchId; placed: string; notes: string
   feeStatus?: string // optional: raw fee_status from the database, if AdminApp passes it
     dbTotal?: number // the total stored in the database (what was actually charged)
+      batchDate?: string // the date of the batch, "YYYY-MM-DD"
 }
 
 export type Settings = {
   open: Record<BatchId, boolean>; cutoff: Record<BatchId, string>
-  opens: Record<BatchId, string> // evening-before opening time, "HH:MM"
+  opens?: Record<BatchId, string> // evening-before opening time, "HH:MM"
   zobo: boolean; zoboPrice: number; maxOn: boolean; max: number
   feeOn: number; feeOff: number; slots: string[]
   puffPrice?: number // optional: defaults to PUFF_PRICE when not provided
@@ -61,8 +62,10 @@ export const DEFAULTS: Settings = {
 export const items = (x: AOrder) => x.pepper + x.plain + x.zobo
 
 export const sub = (x: AOrder, zoboPrice: number, puffPrice: number = PUFF_PRICE) =>
-  (x.pepper + x.plain) * puffPrice + x.zobo * zoboPrice
+  x.dbTotal !== undefined
+    ? x.dbTotal - (x.mode === 'pickup' ? 0 : x.fee)
+    : (x.pepper + x.plain) * puffPrice + x.zobo * zoboPrice
 
 /** Pickup orders never carry a delivery fee. */
 export const total = (x: AOrder, zoboPrice: number, puffPrice: number = PUFF_PRICE) =>
-  sub(x, zoboPrice, puffPrice) + (x.mode === 'pickup' ? 0 : x.fee)
+  x.dbTotal ?? sub(x, zoboPrice, puffPrice) + (x.mode === 'pickup' ? 0 : x.fee)

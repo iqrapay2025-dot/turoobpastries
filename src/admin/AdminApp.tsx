@@ -3,7 +3,7 @@ import { ClipboardList, Settings as Cog, Users, LogOut, Bell, ExternalLink, Eye,
 import { useApp } from '../store'
 import { Button, Field, Toasts, cx } from '../components/ui'
 import { Logo } from '../components/Layout'
-import { type AOrder, type Settings, type Stage } from './data'
+import { type AOrder, type Settings } from './data'
 import { A, type SlotsByDay } from './adminContext'
 import Orders from './Orders'
 import SettingsPage from './SettingsPage'
@@ -26,7 +26,6 @@ const KEY_BY_DOW: Record<number, BatchKey> = { 5: 'fri', 6: 'sat', 0: 'sun' }
 const STAGE_TO_STATUS: Record<string, string> = {
   new: 'received',
   awaiting: 'received',
-  paid: 'received',
   preparing: 'preparing',
   out: 'out_for_delivery',
   ready: 'ready_for_pickup',
@@ -36,8 +35,7 @@ const STAGE_TO_STATUS: Record<string, string> = {
 
 const EMPTY_SETTINGS: Settings = {
   open: { fri: false, sat: false, sun: false },
-  cutoff: { fri: '07:00', sat: '07:00', sun: '07:00' },
-  opens: { fri: '18:00', sat: '18:00', sun: '18:00' },
+  cutoff: { fri: '15:30', sat: '05:00', sun: '05:00' },
   zobo: false,
   zoboPrice: 500,
   maxOn: false,
@@ -46,6 +44,7 @@ const EMPTY_SETTINGS: Settings = {
   feeOff: 200,
   slots: [],
 }
+
 
 /* ---------------------------------------------------------------- login */
 function Login({ onIn }: { onIn: () => void }) {
@@ -93,7 +92,7 @@ function Login({ onIn }: { onIn: () => void }) {
           <div className="lg:hidden"><Logo /></div>
           <div><h2 className="text-3xl font-semibold">Team login</h2><p className="mt-1 text-ink-soft">Sign in to manage this week's orders.</p></div>
           {err && <div role="alert" className="flex items-center gap-2 rounded-2xl bg-red-tint p-3 text-sm font-medium text-red-dark"><AlertCircle className="size-4 shrink-0" />{err}</div>}
-          <Field label="Email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="turoobpastries@gmail.com" required autoComplete="email" />
+          <Field label="Email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="you@turoob.example" required autoComplete="email" />
           <div className="relative">
             <Field label="Password" type={show ? 'text' : 'password'} value={pw} onChange={(e) => setPw(e.target.value)} placeholder="Your password" required autoComplete="current-password" valid={false} />
             <button type="button" aria-label={show ? 'Hide password' : 'Show password'} onClick={() => setShow(!show)} className="absolute right-1 top-6.5 grid size-11 place-items-center text-ink/70 hover:text-red">{show ? <EyeOff className="size-5" /> : <Eye className="size-5" />}</button>
@@ -123,7 +122,7 @@ export default function AdminApp() {
   const [settingsLoaded, setSettingsLoaded] = useState(false)
   const [slotsByDay, setSlotsByDay] = useState<SlotsByDay>({ fri: [], sat: [], sun: [] })
 
-  const ordersRef = useRef<AOrder[]>([])
+  const ordersRef = useRef<Array<AOrder & { id: string }>>([])
   const batchKeyById = useRef<Record<number, BatchKey>>({})
 
   const setOrders = (f: (o: AOrder[]) => AOrder[]) => setOrdersState(f)
@@ -165,7 +164,7 @@ export default function AdminApp() {
     go('#/admin/login')
   }
 
-  /* ---- load settings (batch_days + products + app_settings + delivery_slots) ---- */
+  /* ---- load settings (batch_days + products + app_settings) ---- */
   const loadSettings = useCallback(async () => {
     try {
       const [bd, pr, st, sl] = await Promise.all([
@@ -186,16 +185,14 @@ export default function AdminApp() {
       const hhmm = (t: string | undefined, fallback: string) => (t ? String(t).slice(0, 5) : fallback)
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const zobos = (pr.data ?? []).filter((p: any) => /zobo/i.test(p.name))
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const puffs = (pr.data ?? []).filter((p: any) => !/zobo/i.test(p.name))
       const maxes = days.map((d) => d.max_portions).filter((m) => m !== null && m !== undefined)
 
-            setSettings({
+      setSettings({
         open: { fri: !!row('fri')?.is_open, sat: !!row('sat')?.is_open, sun: !!row('sun')?.is_open },
         cutoff: {
-          fri: hhmm(row('fri')?.cutoff_time, '07:00'),
-          sat: hhmm(row('sat')?.cutoff_time, '07:00'),
-          sun: hhmm(row('sun')?.cutoff_time, '07:00'),
+          fri: hhmm(row('fri')?.cutoff_time, '15:30'),
+          sat: hhmm(row('sat')?.cutoff_time, '05:00'),
+          sun: hhmm(row('sun')?.cutoff_time, '05:00'),
         },
         opens: {
           fri: hhmm(row('fri')?.opens_time, '18:00'),
@@ -210,9 +207,8 @@ export default function AdminApp() {
         max: maxes.length ? Number(maxes[0]) : 150,
         feeOn: Number(st.data.on_campus_fee ?? 100),
         feeOff: Number(st.data.off_campus_fee ?? 200),
+        puffPrice: Number((pr.data ?? []).find((p: { counts_toward_limit: boolean }) => p.counts_toward_limit)?.price ?? 100),
         slots: [],
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        puffPrice: puffs.length ? Number((puffs[0] as any).price) : 100,
       })
 
       const map: SlotsByDay = { fri: [], sat: [], sun: [] }
@@ -240,9 +236,8 @@ export default function AdminApp() {
           items.filter((i) => test(String(i.product_name).toLowerCase())).reduce((a, i) => a + i.quantity, 0)
 
         const pending = o.fee_status === 'pending_review'
-        const paid = o.payment_status === 'paid'
-        const stage: Stage =
-          o.order_status === 'received' ? (pending ? 'awaiting' : paid ? 'paid' : 'new')
+        const stage: string =
+          o.order_status === 'received' ? (pending ? 'awaiting' : o.payment_status === 'paid' ? 'paid' : 'new')
             : o.order_status === 'preparing' ? 'preparing'
               : o.order_status === 'out_for_delivery' ? 'out'
                 : o.order_status === 'ready_for_pickup' ? 'ready'
@@ -266,14 +261,15 @@ export default function AdminApp() {
           fee: o.delivery_fee ?? 0,
           feeFinal: o.fee_status !== 'pending_review',
           linkSent: o.fee_status === 'confirmed' || o.fee_status === 'accepted',
-          feeStatus: o.fee_status,
-          paid,
+          paid: o.payment_status === 'paid',
           stage,
           batch: batchKeyById.current[o.batch_day_id] ?? 'fri',
           placed: o.created_at ?? '',
           notes: o.notes ?? '',
-                    dbTotal: Number(o.total ?? 0),
-        } as AOrder
+          feeStatus: o.fee_status,
+          batchDate: o.batch_date,
+          dbTotal: Number(o.total ?? 0),
+        } as unknown as AOrder & { id: string }
       })
       ordersRef.current = mapped
       setOrdersState(mapped)
@@ -306,8 +302,21 @@ export default function AdminApp() {
     const id = idFor(no)
     const status = STAGE_TO_STATUS[stage]
     if (!id || !status) return
+    const before = ordersRef.current.find((o) => o.no === no)
     const { error } = await supabase.from('orders').update({ order_status: status }).eq('id', id)
     if (error) { toast('error', error.message); return }
+
+    // Pickup orders: tell the customer by email and SMS the moment it is ready.
+    // Only when it newly becomes ready, so a double click never texts twice.
+    if (stage === 'ready' && before?.mode === 'pickup' && String(before.stage) !== 'ready') {
+      try {
+        await notify({ type: 'order_ready', order_id: id })
+        toast('success', 'Customer told their order is ready')
+      } catch (e) {
+        console.error('Ready message failed:', e)
+        toast('error', 'Marked as ready, but the message to the customer could not be sent.')
+      }
+    }
     await loadOrders()
   }, [loadOrders, toast])
 
@@ -348,13 +357,10 @@ export default function AdminApp() {
       for (const k of ['fri', 'sat', 'sun'] as BatchKey[]) {
         const { error } = await supabase
           .from('batch_days')
-                    .update({
+          .update({
             is_open: s.open[k],
             cutoff_time: `${s.cutoff[k]}:00`,
-            opens_time: `${s.opens[k]}:00`,
-            opens_day_offset: 1, // opens the evening before the batch day
             max_portions: s.maxOn ? s.max : null,
-            ...(s.open[k] ? { note: null } : {}), // opening a day removes "Coming soon"
           })
           .eq('day_of_week', DOW[k])
         if (error) throw error

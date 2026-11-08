@@ -50,7 +50,7 @@ export async function placeOrder(order: any) {
 }
 
 // --- Edge Function: notify (emails) ---
-export async function notify(params: { type: 'order_received' | 'fee_confirm'; public_token?: string; order_id?: string }) {
+export async function notify(params: { type: 'order_received' | 'fee_confirm' | 'order_ready'; public_token?: string; order_id?: string }) {
   const { data, error } = await supabase.functions.invoke('notify', { body: params })
   if (error) throw error
   return data

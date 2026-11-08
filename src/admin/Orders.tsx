@@ -15,6 +15,17 @@ const placedText = (s: string) => {
 }
 const live = (o: AOrder) => o.stage !== 'cancelled'
 
+// Weekday number for each batch (0 = Sunday ... 6 = Saturday).
+const BATCH_DOW: Record<BatchId, number> = { fri: 5, sat: 6, sun: 0 }
+
+// The date of the coming batch for that day (today counts), as "YYYY-MM-DD" in Lagos time.
+function nextBatchDate(id: BatchId): string {
+  const today = new Date().toLocaleDateString('en-CA', { timeZone: 'Africa/Lagos' })
+  const d = new Date(`${today}T12:00:00Z`)
+  d.setUTCDate(d.getUTCDate() + ((BATCH_DOW[id] - d.getUTCDay() + 7) % 7))
+  return d.toISOString().slice(0, 10)
+}
+
 function Stat({ icon, label, value }: { icon: React.ReactNode; label: string; value: string | number }) {
   return (
     <div className="rounded-2xl bg-cream/70 p-4"><div className="mb-1 flex items-center gap-2 text-xs font-semibold text-ink/70">{icon}{label}</div><p className="font-display text-2xl font-semibold">{value}</p></div>
@@ -28,7 +39,9 @@ function Row({ icon, children }: { icon: React.ReactNode; children: React.ReactN
 function BatchSummary() {
   const { orders, settings } = useAdmin()
   const [b, setB] = useState<BatchId>('fri')
-  const list = orders.filter((o) => o.batch === b && live(o))
+  // Only the coming batch for the selected day, never older weeks.
+  const date = nextBatchDate(b)
+  const list = orders.filter((o) => o.batch === b && live(o) && o.batchDate === date)
   const sum = (k: 'pepper' | 'plain' | 'zobo') => list.reduce((a, o) => a + o[k], 0)
   const pieces = sum('pepper') + sum('plain')
   const revenue = list.filter((o) => o.paid).reduce((a, o) => a + total(o, settings.zoboPrice, settings.puffPrice), 0)
