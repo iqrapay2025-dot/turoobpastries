@@ -77,7 +77,7 @@ function BatchSummary() {
 }
 
 function Drawer({ no, onClose }: { no: string; onClose: () => void }) {
-  const { orders, settings, setStage, markPaidManually, confirmFee } = useAdmin()
+  const { orders, settings, setStage, markPaidManually, markRefunded, confirmFee } = useAdmin()
   const o = orders.find((x) => x.no === no)
   const [fee, setFee] = useState(String(o?.fee || settings.feeOff))
   const [busy, setBusy] = useState(false)
@@ -104,8 +104,8 @@ function Drawer({ no, onClose }: { no: string; onClose: () => void }) {
 
   const next: { stage: Stage; label: string; icon: React.ReactNode; show: boolean }[] = [
     { stage: 'preparing', label: 'Mark as preparing', icon: <ChefHat className="size-4" />, show: o.paid && o.stage === 'paid' },
-    { stage: o.mode === 'delivery' ? 'out' : 'ready', label: o.mode === 'delivery' ? 'Out for delivery' : 'Ready for pickup', icon: <PackageCheck className="size-4" />, show: o.stage === 'preparing' },
-    { stage: 'completed', label: 'Mark completed', icon: <Flag className="size-4" />, show: o.stage === 'out' || o.stage === 'ready' },
+    { stage: 'out', label: o.mode === 'delivery' ? 'Out for delivery' : 'Ready for pickup', icon: <PackageCheck className="size-4" />, show: o.stage === 'preparing' },
+    { stage: 'completed', label: 'Mark completed', icon: <Flag className="size-4" />, show: o.stage === 'out' },
   ]
 
   return (
@@ -144,7 +144,13 @@ function Drawer({ no, onClose }: { no: string; onClose: () => void }) {
             </dl>
           </section>
 
-          {cancelled && <p className="rounded-2xl bg-cream p-4 text-sm font-semibold text-ink-soft">This order was cancelled (for example, the customer declined the delivery fee).</p>}
+          {cancelled && (
+            <p className="rounded-2xl bg-cream p-4 text-sm font-semibold text-ink-soft">
+              This order was cancelled (for example, the customer declined the delivery fee).
+              {o.paid && ' The customer has paid, so send their money back, then mark it as refunded below.'}
+              {o.paymentStatus === 'refunded' && ' The payment has been refunded.'}
+            </p>
+          )}
 
           {showFee && (
             <section className="rounded-3xl border-2 border-yellow bg-yellow-light/40 p-4">
@@ -169,10 +175,11 @@ function Drawer({ no, onClose }: { no: string; onClose: () => void }) {
           {next.filter((n) => n.show).map((n) => <Button key={n.stage} full size="lg" disabled={busy} onClick={() => run(async () => { await setStage(o.no, n.stage) })}>{n.icon}{n.label}</Button>)}
                     {!cancelled && o.stage !== 'completed' && (
             <Button full variant="ghost" disabled={busy} onClick={() => {
-              const warn = o.paid ? ' It is already paid, so you must refund the customer yourself.' : ''
+              const warn = o.paid ? ' It is already paid. After cancelling, refund the customer and mark it as refunded.' : ''
               if (window.confirm(`Cancel ${o.no}?${warn}`)) run(() => setStage(o.no, 'cancelled'))
             }}>Cancel order</Button>
           )}
+          {cancelled && o.paid && <Button full variant="secondary" disabled={busy} onClick={() => { if (window.confirm(`Mark ${o.no} as refunded? Only do this after you have sent ${naira(total(o, settings.zoboPrice, pp))} back to the customer (for example from the Paystack dashboard).`)) run(() => markRefunded(o.no)) }}><CheckCircle2 className="size-4" />Mark as refunded</Button>}
           {o.stage === 'completed' && <p className="text-center text-sm font-semibold text-ink/70">This order is complete.</p>}
         </div>
       </aside>
@@ -191,7 +198,7 @@ export default function Orders() {
     return subscribeOpenOrder((no) => { takePendingOrder(); setOpen(no) })
   }, [])
 
-  const inTab = (o: AOrder, t: Stage | 'all') => t === 'all' || (t === 'out' ? o.stage === 'out' || o.stage === 'ready' : o.stage === t)
+  const inTab = (o: AOrder, t: Stage | 'all') => t === 'all' || o.stage === t
   const counts = useMemo(() => Object.fromEntries(STAGES.map((s) => [s.id, orders.filter((o) => inTab(o, s.id)).length])), [orders])
   const term = q.toLowerCase().trim()
   const qDigits = digits(q)

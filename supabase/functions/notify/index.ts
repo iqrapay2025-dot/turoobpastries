@@ -2,12 +2,14 @@
 // @ts-nocheck
 //  { type: "order_received", public_token }   -> called by the site after place_order
 //  { type: "fee_confirm",    order_id }       -> called by the admin dashboard (admin login required)
+//  { type: "order_ready",     order_id }       -> pickup order is ready (admin login required)
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.4";
 import { corsHeaders, json } from "../_shared/cors.ts";
 import {
   sendEmail,
   orderReceivedEmail,
   feeConfirmEmail,
+  orderReadyEmail,
   teamAlertEmail,
 } from "../_shared/email.ts";
 
@@ -57,6 +59,27 @@ Deno.serve(async (req) => {
         return json({ error: "Set the delivery fee first" }, 400);
       }
       await sendEmail({ to: o.customer_email, ...feeConfirmEmail(o, o.order_items) });
+      return json({ ok: true });
+    }
+
+    if (body.type === "order_ready") {
+      const userClient = createClient(
+        Deno.env.get("SUPABASE_URL")!,
+        Deno.env.get("SUPABASE_ANON_KEY")!,
+        { global: { headers: { Authorization: req.headers.get("Authorization") ?? "" } } }
+      );
+      const { data: isAdmin } = await userClient.rpc("is_admin");
+      if (!isAdmin) return json({ error: "Not authorised" }, 403);
+
+      const { data: o } = await db
+        .from("orders")
+        .select("*, order_items(*)")
+        .eq("id", body.order_id)
+        .single();
+      if (!o || o.fulfilment !== "pickup" || o.order_status !== "ready_for_pickup") {
+        return json({ error: "Order is not ready for pickup" }, 400);
+      }
+      await sendEmail({ to: o.customer_email, ...orderReadyEmail(o, o.order_items) });
       return json({ ok: true });
     }
 

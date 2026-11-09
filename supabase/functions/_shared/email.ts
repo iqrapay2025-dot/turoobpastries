@@ -74,7 +74,12 @@ export function orderReceivedEmail(o: any, items: any[]) {
       : `<p>Please complete your payment to confirm your order.</p>`;
   return {
     subject: `We received your order ${o.order_number}`,
-    html: wrap(`Thanks, ${esc(o.customer_name)}!`, summary(o, items) + next),
+    html: wrap(
+      `Thanks, ${esc(o.customer_name)}!`,
+      summary(o, items) +
+        next +
+        `<p style="background:#FFF4CC;padding:12px 16px;border-radius:12px">Your tracking code: <b style="font-size:18px;letter-spacing:2px">${esc(o.track_code)}</b><br><span style="font-size:12px">Keep it private. Use it with your phone number on the Track page.${o.fulfilment === "pickup" ? " For pickup, show your order number " + esc(o.order_number) + "." : ""}</span></p>`
+    ),
   };
 }
 
@@ -89,6 +94,20 @@ export function feeConfirmEmail(o: any, items: any[]) {
       `<p>Hi ${esc(o.customer_name)}, the delivery fee for <b>${esc(o.delivery_address)}</b> is <b>${naira(o.delivery_fee)}</b>.</p>` +
         summary(o, items) +
         `<p><a href="${link}" style="background:#D62828;color:#fff;padding:12px 22px;border-radius:999px;text-decoration:none;display:inline-block">Accept and pay</a></p>`
+    ),
+  };
+}
+
+// deno-lint-ignore no-explicit-any
+export function orderReadyEmail(o: any, items: any[]) {
+  const place = esc(Deno.env.get("PICKUP_LOCATION") ?? "Central Mosque, University of Ilorin");
+  return {
+    subject: `Your order ${o.order_number} is ready for pickup`,
+    html: wrap(
+      "Come and get your order!",
+      `<p>Hi ${esc(o.customer_name)}, your order <b>${esc(o.order_number)}</b> is ready for pickup at <b>${place}</b>.</p>` +
+        `<p>Please show your order number when you arrive.</p>` +
+        summary(o, items)
     ),
   };
 }

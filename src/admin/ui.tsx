@@ -1,6 +1,6 @@
 import type { ReactNode } from 'react'
 import { cx } from '../components/ui'
-import { STAGE_LABEL, type Stage, type AOrder } from './data'
+import { STAGE_LABEL, READY_LABEL, type Stage, type AOrder } from './data'
 
 const TONE: Record<Stage, string> = {
   new: 'bg-red text-white',
@@ -8,13 +8,12 @@ const TONE: Record<Stage, string> = {
   paid: 'bg-ink text-yellow',
   preparing: 'bg-red-tint text-red-dark',
   out: 'bg-yellow text-ink',
-  ready: 'bg-yellow text-ink',
   completed: 'bg-ink/8 text-ink/70',
   cancelled: 'bg-ink/8 text-ink/60 line-through decoration-ink/30',
 }
 
 export const stageLabel = (s: Stage, mode: AOrder['mode']) =>
-  s === 'out' && mode === 'pickup' ? STAGE_LABEL.ready : STAGE_LABEL[s] ?? s
+  s === 'out' && mode === 'pickup' ? READY_LABEL : STAGE_LABEL[s] ?? s
 
 export function StagePill({ o }: { o: AOrder }) {
   return (
@@ -26,6 +25,7 @@ export function StagePill({ o }: { o: AOrder }) {
 }
 
 export function PayPill({ o }: { o: AOrder }) {
+  if (o.paymentStatus === 'refunded') return <span className="inline-flex rounded-full bg-yellow-light px-2.5 py-1 text-xs font-bold text-red-dark">Refunded</span>
   if (o.paid) return <span className="inline-flex rounded-full bg-ink px-2.5 py-1 text-xs font-bold text-yellow">Paid</span>
   if (o.stage === 'cancelled') return <span className="inline-flex rounded-full bg-ink/8 px-2.5 py-1 text-xs font-bold text-ink/70">Not paid</span>
   const label =

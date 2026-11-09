@@ -26,9 +26,9 @@ export function orderMessage(o: AOrder, pickupPlace: string): string {
     case 'preparing':
       return `${hi} We are preparing your order ${o.no}.`
     case 'out':
-      return `${hi} Your order ${o.no} is on its way to you. Please keep your phone nearby.`
-    case 'ready':
-      return `${hi} Your order ${o.no} is ready for pickup at ${pickupPlace}. See you soon!`
+      return o.mode === 'pickup'
+        ? `${hi} Your order ${o.no} is ready for pickup at ${pickupPlace}. Please bring your order number. See you soon!`
+        : `${hi} Your order ${o.no} is on its way to you. Please keep your phone nearby.`
     case 'completed':
       return `${hi} Thank you for ordering with us! We hope you enjoyed order ${o.no}.`
     default:

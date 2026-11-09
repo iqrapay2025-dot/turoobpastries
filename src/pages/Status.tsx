@@ -25,7 +25,7 @@ type TrackView = {
 export default function Status() {
   const { go, toast, order } = useApp()
   // Pre-fill from the last order placed on this device.
-  const [num, setNum] = useState(order?.number ?? '')
+  const [code, setCode] = useState(order?.track_code ?? '')
   const [phone, setPhone] = useState(order?.phone ?? '')
   const [res, setRes] = useState<TrackView | 'none' | null>(null)
   const [loading, setLoading] = useState(false)
@@ -39,7 +39,7 @@ export default function Status() {
     setLoading(true)
     setRes(null)
     try {
-      const data = (await trackOrder(num.trim(), phone.trim())) as TrackView | null
+      const data = (await trackOrder(code.trim(), phone.trim())) as TrackView | null
       setRes(data ?? 'none')
     } catch (err) {
       toast('error', messageOf(err))
@@ -71,9 +71,9 @@ export default function Status() {
   return (
     <main className="mx-auto max-w-xl px-4 pb-16 pt-10 sm:px-6">
       <h1 className="text-4xl font-semibold sm:text-5xl">Track your order</h1>
-      <p className="mt-2 text-ink-soft">Enter your order number and phone number.</p>
+      <p className="mt-2 text-ink-soft">Enter your tracking code and phone number. The code is on your confirmation page and in your email.</p>
       <form onSubmit={find} className="mt-6 space-y-4 rounded-[28px] bg-white p-6 shadow-soft">
-        <Field label="Order number" value={num} onChange={(e) => setNum(e.target.value)} placeholder="TRB-1042" required />
+        <Field label="Tracking code" value={code} onChange={(e) => setCode(e.target.value.toUpperCase())} placeholder="e.g. 7F3K9Q2M1X" autoCapitalize="characters" autoComplete="off" required />
         <Field label="Phone number" type="tel" value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="0801 234 5678" required />
         <Button full size="lg" type="submit" loading={loading}><Search className="size-4" />Check status</Button>
         <p className="text-center text-xs text-ink/70">Use the phone number you gave when ordering.</p>
@@ -81,7 +81,7 @@ export default function Status() {
 
       {res === 'none' && (
         <div className="mt-5">
-          <Notice tone="error" title="We could not find that order">Check your order number and phone number, then try again. Still stuck? Message us on WhatsApp.</Notice>
+          <Notice tone="error" title="We could not find that order">Check your tracking code and phone number, then try again. Still stuck? Message us on WhatsApp.</Notice>
         </div>
       )}
 
@@ -117,9 +117,13 @@ export default function Status() {
           </ul>
 
           {cancelled ? (
-            <Notice title="This order was cancelled">You can place a new order any time.</Notice>
+            <Notice title="This order was cancelled">{r.payment_status === 'refunded' ? 'Your payment has been refunded. ' : paid ? 'We will refund your payment. ' : ''}You can place a new order any time.</Notice>
           ) : (
             <Tracker steps={stepsFor(r.fulfilment)} current={step} />
+          )}
+
+          {r.order_status === 'ready_for_pickup' && (
+            <div className="mt-5"><Notice title="Your order is ready for pickup">Come and collect it and show your order number <b>{r.order_number}</b>.</Notice></div>
           )}
 
           {next && (

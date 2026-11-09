@@ -61,11 +61,20 @@ Deno.serve(async (req) => {
       return new Response("not successful", { status: 500 });
     }
 
-    const { data: order } = await db
+    // The order's saved reference changes on every payment attempt, so if this
+    // reference is an older attempt, fall back to the order number Paystack echoes back.
+    let { data: order } = await db
       .from("orders")
       .select("*, order_items(*)")
       .eq("paystack_reference", reference)
-      .single();
+      .maybeSingle();
+    if (!order && v.data.metadata?.order_number) {
+      ({ data: order } = await db
+        .from("orders")
+        .select("*, order_items(*)")
+        .eq("order_number", v.data.metadata.order_number)
+        .maybeSingle());
+    }
     if (!order) {
       await release();
       return new Response("order not found", { status: 500 });
@@ -86,6 +95,17 @@ Deno.serve(async (req) => {
         console.error("Could not mark order paid", upErr);
         await release();
         return new Response("update failed", { status: 500 });
+      }
+
+            if (order.order_status === "cancelled") {
+        const team = Deno.env.get("TEAM_EMAIL");
+        if (team) {
+          await sendEmail({
+            to: team,
+            subject: `REFUND NEEDED: ${order.order_number} was cancelled but paid`,
+            html: `<p>${order.customer_name} (${order.customer_phone}) paid ₦${order.total} for ${order.order_number}, which you had cancelled. Please refund them in Paystack.</p>`,
+          });
+        }
       }
 
       const customer = paidEmail(order, order.order_items);

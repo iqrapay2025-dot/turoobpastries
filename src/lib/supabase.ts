@@ -73,8 +73,8 @@ export async function getOrderByToken(token: string) {
 }
 
 // --- Track order ---
-export async function trackOrder(orderNumber: string, phone: string) {
-  const { data, error } = await supabase.rpc('track_order', { p_order_number: orderNumber, p_phone: phone })
+export async function trackOrder(trackCode: string, phone: string) {
+  const { data, error } = await supabase.rpc('track_order', { p_code: trackCode, p_phone: phone })
   if (error) throw error
   return data
 }

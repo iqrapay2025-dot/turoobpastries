@@ -16,6 +16,7 @@ export type Ctx = {
   saveSettings: (s: Settings, slots: SlotsByDay) => Promise<void>
   setStage: (no: string, stage: string) => Promise<void>
   markPaidManually: (no: string) => Promise<void>
+  markRefunded: (no: string) => Promise<void>
   confirmFee: (no: string, fee: number) => Promise<void>
   reload: () => Promise<void>
 }

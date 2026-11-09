@@ -1,6 +1,6 @@
 import type { BatchId } from '../data'
 
-export type Stage = 'new' | 'awaiting' | 'paid' | 'preparing' | 'out' | 'ready' | 'completed' | 'cancelled'
+export type Stage = 'new' | 'awaiting' | 'paid' | 'preparing' | 'out' | 'completed' | 'cancelled'
 
 export type AOrder = {
   id?: string // database id, set by AdminApp when loading orders
@@ -9,6 +9,7 @@ export type AOrder = {
   mode: 'pickup' | 'delivery'; zone: 'on' | 'off'; address: string; slot: string
   fee: number; feeFinal: boolean; linkSent: boolean; paid: boolean; stage: Stage
   batch: BatchId; placed: string; notes: string
+  paymentStatus?: string // raw payment_status: unpaid | paid | failed | refunded
   feeStatus?: string // optional: raw fee_status from the database, if AdminApp passes it
     dbTotal?: number // the total stored in the database (what was actually charged)
       batchDate?: string // the date of the batch, "YYYY-MM-DD"
@@ -25,7 +26,7 @@ export type Settings = {
 /** Fallback price per puff-puff piece (₦). Used when settings.puffPrice isn't set. */
 export const PUFF_PRICE = 100
 
-/** Tabs shown on the Orders page. 'out' also covers 'ready' (pickup) orders. */
+/** Tabs shown on the Orders page. 'out' is "out for delivery" or "ready for pickup", depending on the order's mode. */
 export const STAGES: { id: Stage | 'all'; label: string }[] = [
   { id: 'all', label: 'All' },
   { id: 'new', label: 'New' },
@@ -44,10 +45,12 @@ export const STAGE_LABEL: Record<Stage, string> = {
   paid: 'Paid',
   preparing: 'Preparing',
   out: 'Out for delivery',
-  ready: 'Ready for pickup',
   completed: 'Completed',
   cancelled: 'Cancelled',
 }
+
+/** The 'out' stage reads differently for pickup orders. */
+export const READY_LABEL = 'Ready for pickup'
 
 /** Starting values only. AdminApp loads the real settings from the database. */
 export const DEFAULTS: Settings = {

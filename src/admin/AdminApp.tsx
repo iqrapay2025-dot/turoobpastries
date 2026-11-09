@@ -24,16 +24,10 @@ type BatchKey = 'fri' | 'sat' | 'sun'
 const DOW: Record<BatchKey, number> = { fri: 5, sat: 6, sun: 0 }
 const KEY_BY_DOW: Record<number, BatchKey> = { 5: 'fri', 6: 'sat', 0: 'sun' }
 
-// Dashboard stage -> orders.order_status
-const STAGE_TO_STATUS: Record<string, string> = {
-  new: 'received',
-  awaiting: 'received',
-  preparing: 'preparing',
-  out: 'out_for_delivery',
-  ready: 'ready_for_pickup',
-  completed: 'completed',
-  cancelled: 'cancelled',
-}
+// Dashboard stage -> orders.order_status. 'out' depends on the order's mode.
+const statusFor = (stage: string, mode?: string): string | undefined =>
+  stage === 'out' ? (mode === 'pickup' ? 'ready_for_pickup' : 'out_for_delivery')
+    : ({ new: 'received', awaiting: 'received', preparing: 'preparing', completed: 'completed', cancelled: 'cancelled' } as Record<string, string>)[stage]
 
 const EMPTY_SETTINGS: Settings = {
   open: { fri: false, sat: false, sun: false },
@@ -245,11 +239,10 @@ export default function AdminApp() {
         const stage: string =
           o.order_status === 'received' ? (pending ? 'awaiting' : o.payment_status === 'paid' ? 'paid' : 'new')
             : o.order_status === 'preparing' ? 'preparing'
-              : o.order_status === 'out_for_delivery' ? 'out'
-                : o.order_status === 'ready_for_pickup' ? 'ready'
-                  : o.order_status === 'completed' ? 'completed'
-                    : o.order_status === 'cancelled' ? 'cancelled'
-                      : 'new'
+              : o.order_status === 'out_for_delivery' || o.order_status === 'ready_for_pickup' ? 'out'
+                : o.order_status === 'completed' ? 'completed'
+                  : o.order_status === 'cancelled' ? 'cancelled'
+                    : 'new'
 
         return {
           id: o.id,
@@ -274,6 +267,7 @@ export default function AdminApp() {
           notes: o.notes ?? '',
           feeStatus: o.fee_status,
           batchDate: o.batch_date,
+          paymentStatus: o.payment_status,
           dbTotal: Number(o.total ?? 0),
         } as unknown as AOrder & { id: string }
       })
@@ -306,15 +300,15 @@ export default function AdminApp() {
 
   const setStage = useCallback(async (no: string, stage: string) => {
     const id = idFor(no)
-    const status = STAGE_TO_STATUS[stage]
-    if (!id || !status) return
     const before = ordersRef.current.find((o) => o.no === no)
+    const status = statusFor(stage, before?.mode)
+    if (!id || !status) return
     const { error } = await supabase.from('orders').update({ order_status: status }).eq('id', id)
     if (error) { toast('error', error.message); return }
 
     // Pickup orders: tell the customer by email and SMS the moment it is ready.
     // Only when it newly becomes ready, so a double click never texts twice.
-    if (stage === 'ready' && before?.mode === 'pickup' && String(before.stage) !== 'ready') {
+    if (stage === 'out' && before?.mode === 'pickup' && before.stage !== 'out') {
       try {
         await notify({ type: 'order_ready', order_id: id })
         toast('success', 'Customer told their order is ready')
@@ -335,6 +329,17 @@ export default function AdminApp() {
       .eq('id', id)
     if (error) { toast('error', error.message); return }
     toast('success', 'Marked as paid')
+    await loadOrders()
+  }, [loadOrders, toast])
+
+  // After a cancelled, paid order has been refunded (e.g. from the Paystack dashboard), record it here.
+  const markRefunded = useCallback(async (no: string) => {
+    const id = idFor(no)
+    const o = ordersRef.current.find((x) => x.no === no)
+    if (!id || !o || o.stage !== 'cancelled' || !o.paid) return
+    const { error } = await supabase.from('orders').update({ payment_status: 'refunded' }).eq('id', id)
+    if (error) { toast('error', error.message); return }
+    toast('success', 'Marked as refunded')
     await loadOrders()
   }, [loadOrders, toast])
 
@@ -417,8 +422,8 @@ export default function AdminApp() {
   }, [loadSettings, toast])
 
   const ctx = useMemo(
-    () => ({ orders, setOrders, settings, setSettings, seen, markSeen, slotsByDay, saveSettings, setStage, markPaidManually, confirmFee, reload }),
-    [orders, settings, seen, slotsByDay, saveSettings, setStage, markPaidManually, confirmFee, reload],
+    () => ({ orders, setOrders, settings, setSettings, seen, markSeen, slotsByDay, saveSettings, setStage, markPaidManually, markRefunded, confirmFee, reload }),
+    [orders, settings, seen, slotsByDay, saveSettings, setStage, markPaidManually, markRefunded, confirmFee, reload],
   )
 
   if (checking) return <main className="grid min-h-screen place-items-center text-ink-soft">Checking your session…</main>

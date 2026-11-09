@@ -95,11 +95,12 @@ export default function Checkout() {
         delivery_slot: mode === 'delivery' ? chosenSlot || undefined : undefined,
         notes: f.notes.trim() || undefined,
         items: items.map((i) => ({ product_id: i.id, quantity: i.qty })),
-      })) as { order_number: string; public_token: string; total: number }
+      })) as { order_number: string; public_token: string; track_code: string; total: number }
 
       setOrder({
         number: result.order_number,
         public_token: result.public_token,
+        track_code: result.track_code,
         name: f.name.trim(),
         phone: f.phone.trim(),
         email: f.email.trim(),
