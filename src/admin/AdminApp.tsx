@@ -8,6 +8,8 @@ import { A, type SlotsByDay } from './adminContext'
 import Orders from './Orders'
 import SettingsPage from './SettingsPage'
 import Customers from './Customers'
+import NotificationsPanel from './NotificationsPanel'
+import { requestOpenOrder } from './openOrder'
 import {
   supabase,
   isAdmin as checkIsAdmin,
@@ -36,6 +38,7 @@ const STAGE_TO_STATUS: Record<string, string> = {
 const EMPTY_SETTINGS: Settings = {
   open: { fri: false, sat: false, sun: false },
   cutoff: { fri: '15:30', sat: '05:00', sun: '05:00' },
+  opens: { fri: '18:00', sat: '18:00', sun: '18:00' },
   zobo: false,
   zoboPrice: 500,
   maxOn: false,
@@ -121,13 +124,15 @@ export default function AdminApp() {
   const [seen, setSeen] = useState<Set<string>>(new Set())
   const [settingsLoaded, setSettingsLoaded] = useState(false)
   const [slotsByDay, setSlotsByDay] = useState<SlotsByDay>({ fri: [], sat: [], sun: [] })
+  const [bellOpen, setBellOpen] = useState(false)
 
   const ordersRef = useRef<Array<AOrder & { id: string }>>([])
   const batchKeyById = useRef<Record<number, BatchKey>>({})
 
   const setOrders = (f: (o: AOrder[]) => AOrder[]) => setOrdersState(f)
   const markSeen = (no: string) => setSeen((s) => new Set(s).add(no))
-  const fresh = orders.filter((o) => (o.stage === 'new' || o.stage === 'paid') && !seen.has(o.no)).length
+  // Badge: orders awaiting your fee confirmation always count; new/paid orders count until seen.
+  const fresh = orders.filter((o) => o.stage === 'awaiting' || ((o.stage === 'new' || o.stage === 'paid') && !seen.has(o.no))).length
 
   /* ---- session: restore on refresh, react to sign-out ---- */
   useEffect(() => {
@@ -161,6 +166,7 @@ export default function AdminApp() {
   const signOut = async () => {
     await supabase.auth.signOut()
     setAuthed(false)
+    setBellOpen(false)
     go('#/admin/login')
   }
 
@@ -360,6 +366,7 @@ export default function AdminApp() {
           .update({
             is_open: s.open[k],
             cutoff_time: `${s.cutoff[k]}:00`,
+            opens_time: `${s.opens?.[k] ?? '18:00'}:00`,
             max_portions: s.maxOn ? s.max : null,
           })
           .eq('day_of_week', DOW[k])
@@ -446,7 +453,7 @@ export default function AdminApp() {
               <p className="hidden font-display text-lg font-semibold lg:block">Team dashboard</p>
               <div className="flex items-center gap-2">
                 <a href="#/" className="inline-flex h-11 items-center gap-2 rounded-full px-4 text-sm font-semibold text-ink-soft transition hover:bg-yellow-light"><ExternalLink className="size-4" /><span className="hidden sm:inline">View site</span><span className="sr-only sm:hidden">View site</span></a>
-                <button aria-label={`${fresh} new orders`} onClick={() => go('#/admin')} className="relative grid size-11 place-items-center rounded-full bg-cream hover:bg-yellow-light"><Bell className="size-5" />{fresh > 0 && <span className="absolute -right-1 -top-1 grid min-w-5 place-items-center rounded-full bg-red px-1 text-xs font-bold text-white">{fresh}</span>}</button>
+                <button aria-label={`${fresh} new orders`} onClick={() => setBellOpen(true)} className="relative grid size-11 place-items-center rounded-full bg-cream hover:bg-yellow-light"><Bell className="size-5" />{fresh > 0 && <span className="absolute -right-1 -top-1 grid min-w-5 place-items-center rounded-full bg-red px-1 text-xs font-bold text-white">{fresh}</span>}</button>
                 <button aria-label="Sign out" onClick={signOut} className="grid size-11 place-items-center rounded-full bg-cream hover:bg-yellow-light lg:hidden"><LogOut className="size-4" /></button>
               </div>
             </div>
@@ -457,6 +464,11 @@ export default function AdminApp() {
           <main className="px-4 py-6 sm:px-8">{body}</main>
         </div>
       </div>
+      <NotificationsPanel
+        open={bellOpen}
+        onClose={() => setBellOpen(false)}
+        onOpenOrder={(no) => { markSeen(no); setBellOpen(false); requestOpenOrder(no); go('#/admin') }}
+      />
       <Toasts />
     </A.Provider>
   )

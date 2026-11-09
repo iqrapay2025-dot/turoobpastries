@@ -9,6 +9,7 @@ import OverallStats from './OverallStats'
 import ReportDownload from './ReportDownload'
 import { WhatsAppIcon } from '../components/Layout'
 import { waLink, orderMessage } from '../lib/whatsapp'
+import { takePendingOrder, subscribeOpenOrder } from './openOrder'
 
 const digits = (s: string) => s.replace(/\D/g, '').slice(-10)
 const placedText = (s: string) => {
@@ -166,6 +167,12 @@ function Drawer({ no, onClose }: { no: string; onClose: () => void }) {
         <div className="space-y-2 border-t border-ink/10 bg-cream/50 p-5">
           {showManualPaid && <Button full variant="secondary" disabled={busy} onClick={() => { if (window.confirm(`Mark ${o.no} as paid? Only do this if you have received the money outside Paystack.`)) run(() => markPaidManually(o.no)) }}><CheckCircle2 className="size-4" />Mark as paid manually</Button>}
           {next.filter((n) => n.show).map((n) => <Button key={n.stage} full size="lg" disabled={busy} onClick={() => run(async () => { await setStage(o.no, n.stage) })}>{n.icon}{n.label}</Button>)}
+                    {!cancelled && o.stage !== 'completed' && (
+            <Button full variant="ghost" disabled={busy} onClick={() => {
+              const warn = o.paid ? ' It is already paid, so you must refund the customer yourself.' : ''
+              if (window.confirm(`Cancel ${o.no}?${warn}`)) run(() => setStage(o.no, 'cancelled'))
+            }}>Cancel order</Button>
+          )}
           {o.stage === 'completed' && <p className="text-center text-sm font-semibold text-ink/70">This order is complete.</p>}
         </div>
       </aside>
@@ -178,6 +185,11 @@ export default function Orders() {
   const [tab, setTab] = useState<Stage | 'all'>('all')
   const [q, setQ] = useState('')
   const [open, setOpen] = useState<string | null>(null)
+    useEffect(() => {
+    const p = takePendingOrder()
+    if (p) setOpen(p)
+    return subscribeOpenOrder((no) => { takePendingOrder(); setOpen(no) })
+  }, [])
 
   const inTab = (o: AOrder, t: Stage | 'all') => t === 'all' || (t === 'out' ? o.stage === 'out' || o.stage === 'ready' : o.stage === t)
   const counts = useMemo(() => Object.fromEntries(STAGES.map((s) => [s.id, orders.filter((o) => inTab(o, s.id)).length])), [orders])

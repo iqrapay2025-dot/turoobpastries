@@ -62,10 +62,13 @@ export default function SettingsPage() {
     <div className="mx-auto max-w-4xl space-y-5 pb-28">
       <div><h1 className="text-3xl font-semibold sm:text-4xl">Settings</h1><p className="text-ink/70">Control ordering, availability and delivery.</p></div>
 
-      <Block title="Ordering" desc="Open or close each batch and set its cutoff time. The cutoff is a time on the day of the batch.">
+      <Block title="Ordering" desc="Open or close each batch and set when ordering opens and closes. Ordering opens the evening before the batch at the time you set, and closes at the cutoff on the day of the batch.">
         {DAYS.map((b) => (
           <Row key={b.id} label={`${b.day} batch`} hint={d.open[b.id] ? 'Customers can order' : 'Ordering is closed'}>
-            <div className="flex items-center gap-3">
+            <div className="flex flex-wrap items-center justify-end gap-3">
+              <label className="flex items-center gap-2 text-sm text-ink/70"><span className="hidden sm:inline">Opens at</span>
+                <input type="time" aria-label={`${b.day} opens at`} value={d.opens?.[b.id] ?? '18:00'} onChange={(e) => up({ opens: { fri: '18:00', sat: '18:00', sun: '18:00', ...d.opens, [b.id]: e.target.value } })} className="h-11 rounded-2xl border-2 border-yellow-light bg-white px-3 font-semibold text-ink outline-none focus:border-yellow-dark" />
+              </label>
               <label className="flex items-center gap-2 text-sm text-ink/70"><span className="hidden sm:inline">Cutoff</span>
                 <input type="time" aria-label={`${b.day} cutoff`} value={d.cutoff[b.id]} onChange={(e) => up({ cutoff: { ...d.cutoff, [b.id]: e.target.value } })} className="h-11 rounded-2xl border-2 border-yellow-light bg-white px-3 font-semibold text-ink outline-none focus:border-yellow-dark" />
               </label>
