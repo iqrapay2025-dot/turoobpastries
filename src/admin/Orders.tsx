@@ -7,6 +7,8 @@ import { STAGES, PUFF_PRICE, items, sub, total, type AOrder, type Stage } from '
 import { useAdmin } from './adminContext'
 import OverallStats from './OverallStats'
 import ReportDownload from './ReportDownload'
+import { WhatsAppIcon } from '../components/Layout'
+import { waLink, orderMessage } from '../lib/whatsapp'
 
 const digits = (s: string) => s.replace(/\D/g, '').slice(-10)
 const placedText = (s: string) => {
@@ -85,6 +87,7 @@ function Drawer({ no, onClose }: { no: string; onClose: () => void }) {
   if (!o) return null
 
   const pp = settings.puffPrice ?? PUFF_PRICE
+    const waHref = waLink(o.phone, orderMessage(o, 'Central Mosque, Unilorin'))
 
   const run = async (fn: () => Promise<void>) => {
     if (busy) return
@@ -116,6 +119,11 @@ function Drawer({ no, onClose }: { no: string; onClose: () => void }) {
             <h3 className="text-base font-semibold">Customer</h3>
             <p className="font-semibold">{o.name}</p>
             <Row icon={<Phone className="size-4" />}><a href={`tel:${o.phone}`} className="hover:underline">{o.phone}</a></Row>
+                        {waHref && (
+              <a href={waHref} target="_blank" rel="noreferrer" className="flex min-h-11 items-center justify-center gap-2 rounded-full bg-ink px-4 text-sm font-semibold text-white hover:bg-ink-soft">
+                <WhatsAppIcon className="size-4 text-yellow" />Message on WhatsApp
+              </a>
+            )}
             <Row icon={o.mode === 'delivery' ? <MapPin className="size-4" /> : <Store className="size-4" />}>{o.mode === 'delivery' ? <>{o.address}<span className="block text-ink/70">{o.zone === 'on' ? 'On-campus' : 'Off-campus'} delivery</span></> : 'Pickup at Central Mosque, Unilorin'}</Row>
             <Row icon={<Clock className="size-4" />}>Time slot: {o.slot}</Row>
             {o.notes && <p className="rounded-2xl bg-yellow-light/60 p-3 text-sm"><b>Note:</b> {o.notes}</p>}

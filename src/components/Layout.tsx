@@ -5,7 +5,7 @@ import { Button, Toasts, cx } from './ui'
 import { naira } from '../data'
 import logo from '../assets/logo.jpg'
 
-export const WA = 'https://wa.me/2347936401?text=Hi%20Turoob%20Pastries!'
+export const WA = 'https://wa.me/2347087936401?text=Hi%20Turoob%20Pastries!'
 
 export function WhatsAppIcon({ className }: { className?: string }) {
   return (
