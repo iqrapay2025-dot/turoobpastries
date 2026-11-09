@@ -1,8 +1,9 @@
 import { useEffect, useState } from 'react'
 import { Lottie } from 'lottie-react'
-
-const ANIMATION_URL =
-  'https://lottie.host/c09c57c4-8ab6-41f1-aadf-b7fc86778ce4/ugxcGKzIAS.json'
+import { Loader2 } from 'lucide-react'
+// Saved copy of https://lottie.host/c09c57c4-8ab6-41f1-aadf-b7fc86778ce4/ugxcGKzIAS.json
+// Save that file as src/assets/loader.json so the loader works offline.
+import loaderJson from './.././../src/assets/loader.json'
 
 // Turoob brand colours
 const YELLOW = '#FFC107'
@@ -39,22 +40,16 @@ function recolor(node: any, layerColor?: string): void {
   for (const key of Object.keys(node)) recolor(node[key], colour)
 }
 
-// Download and recolour once, then reuse for every loader on the site.
-let cache: Promise<object> | null = null
-const loadAnimation = () =>
-  (cache ??= fetch(ANIMATION_URL)
-    .then((r) => {
-      if (!r.ok) throw new Error(`Animation request failed (${r.status})`)
-      return r.json()
-    })
-    .then((json) => {
-      recolor(json)
-      return json as object
-    })
-    .catch((e) => {
-      cache = null // allow a retry next time
-      throw e
-    }))
+// Recolour once, then reuse for every loader on the site.
+let animation: object | null = null
+function getAnimation(): object {
+  if (!animation) {
+    const copy = structuredClone(loaderJson) as object
+    recolor(copy)
+    animation = copy
+  }
+  return animation
+}
 
 type Props = {
   className?: string
@@ -64,20 +59,27 @@ type Props = {
 
 export default function LottieAnimation({ className, loop = true, autoplay = true }: Props) {
   const [data, setData] = useState<object | null>(null)
+  const [failed, setFailed] = useState(false)
 
   useEffect(() => {
-    let alive = true
-    loadAnimation()
-      .then((json) => {
-        if (alive) setData(json)
-      })
-      .catch((e) => console.error('Could not load animation:', e))
-    return () => {
-      alive = false
+    try {
+      setData(getAnimation())
+    } catch (e) {
+      console.error('Could not prepare animation:', e)
+      setFailed(true)
     }
   }, [])
 
-  // Keeps the space reserved while the animation downloads.
+  // Plain spinner if the animation can't be prepared.
+  if (failed) {
+    return (
+      <div className={className} aria-hidden>
+        <Loader2 className="size-full animate-spin text-red" />
+      </div>
+    )
+  }
+
+  // Keeps the space reserved for the first frame.
   if (!data) return <div className={className} aria-hidden />
 
   return <Lottie src={data} loop={loop} autoplay={autoplay} className={className} aria-hidden />
