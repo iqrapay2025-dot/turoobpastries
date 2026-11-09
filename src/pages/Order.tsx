@@ -3,6 +3,7 @@ import { BatchBanner, BatchPicker, ProductCard } from '../components/Blocks'
 import { CartPanel } from '../components/Summary'
 import { useApp } from '../store'
 import { toProduct } from '../lib/products'
+import Loader from '../components/Loader'
 
 export default function Order() {
   const { closed, count, products, productsError, productsLoading, currentBatch } = useApp()
@@ -31,7 +32,7 @@ export default function Order() {
               Couldn’t load the menu. Please refresh the page.
             </p>
           ) : productsLoading ? (
-            <p className="text-ink-soft sm:col-span-2">Loading the menu…</p>
+            <div className="sm:col-span-2"><Loader label="Loading the menu…" /></div>
           ) : (
             products.map(toProduct).map((p) => (
               <div

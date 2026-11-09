@@ -18,6 +18,7 @@ import {
   adminSetDeliveryFee,
   notify,
 } from '../lib/supabase'
+import Loader from '../components/Loader'
 
 /* ------------------------------------------------------------ constants */
 type BatchKey = 'fri' | 'sat' | 'sun'
@@ -426,7 +427,7 @@ export default function AdminApp() {
     [orders, settings, seen, slotsByDay, saveSettings, setStage, markPaidManually, markRefunded, confirmFee, reload],
   )
 
-  if (checking) return <main className="grid min-h-screen place-items-center text-ink-soft">Checking your session…</main>
+  if (checking) return <main className="mx-auto max-w-lg px-4"><Loader page label="Checking your session…" /></main>
   if (!authed) return <><Login onIn={() => { setAuthed(true); go('#/admin') }} /><Toasts /></>
 
   const page = route.replace('#/admin', '')

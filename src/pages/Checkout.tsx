@@ -5,6 +5,7 @@ import { Button, EmptyState, Field, Notice, cx } from '../components/ui'
 import { Lines, Totals } from '../components/Summary'
 import { placeOrder, notify, paystackInit } from '../lib/supabase'
 import { naira } from '../data'
+import Loader from '../components/Loader'
 
 function Section({ n, title, children }: { n: number; title: string; children: React.ReactNode }) {
   return (
@@ -37,7 +38,7 @@ export default function Checkout() {
   const [submitting, setSubmitting] = useState(false)
   const blur = (k: string) => () => setSeen((x) => ({ ...x, [k]: true }))
 
-  if (productsLoading) return <main className="mx-auto max-w-lg px-4 py-16 text-center text-ink-soft">Loading your order…</main>
+  if (productsLoading) return <main className="mx-auto max-w-lg px-4"><Loader page label="Loading your order…" /></main>
   if (productsError) return <main className="mx-auto max-w-lg px-4 py-16"><EmptyState icon={<ShoppingBag className="size-7" />} title="Couldn’t load the menu" action={<Button onClick={() => window.location.reload()}>Refresh</Button>}>Please refresh the page and try again.</EmptyState></main>
 
   const items = products

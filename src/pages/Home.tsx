@@ -8,6 +8,7 @@ import { fetchProducts, fetchReviews, fetchTeamMembers } from '../lib/supabase'
 import { Button, SectionTitle, Sparkle } from '../components/ui'
 import { BatchBanner, BatchPicker, ProductCard } from '../components/Blocks'
 import { FAQ, IMG } from '../data'
+import Loader from '../components/Loader'
 
 /* ---------------------------------------------------------------- Hero */
 function Hero() {
@@ -244,7 +245,7 @@ export default function Home() {
               Couldn’t load the menu. Please refresh the page.
             </p>
           ) : loading ? (
-            <p className="text-center text-ink-soft">Loading the menu…</p>
+            <Loader label="Loading the menu…" />
           ) : (
             <div className="grid gap-5 md:grid-cols-3">
               {products.map((p) => <ProductCard key={p.id} p={p} preview />)}

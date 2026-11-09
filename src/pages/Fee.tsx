@@ -6,6 +6,7 @@ import { Lines, Totals } from '../components/Summary'
 import { getOrderByToken, respondToDeliveryFee, paystackInit } from '../lib/supabase'
 import { tokenFromRoute, messageOf, type OrderView } from '../lib/orderView'
 import { naira } from '../data'
+import Loader from '../components/Loader'
 
 function Shell({ children }: { children: React.ReactNode }) {
   return <main className="mx-auto max-w-xl px-4 pb-16 pt-10 sm:px-6">{children}</main>
@@ -99,7 +100,7 @@ export default function Fee() {
     }
   }
 
-  if (state === 'loading') return <Shell><p className="text-center text-ink-soft">Loading your order…</p></Shell>
+  if (state === 'loading') return <Shell><Loader label="Loading your order…" /></Shell>
   if (state === 'error') return <Message title="Couldn’t load your order" actions={<Button onClick={() => { setState('loading'); load() }}>Try again</Button>}>Please check your connection and try again.</Message>
   if (state === 'missing' || !data) return <Message title="Order not found" actions={<Button onClick={() => go('#/order')}>Start an order</Button>}>This link may be incomplete. Use the link in your email, or look up your order with your order number.</Message>
 

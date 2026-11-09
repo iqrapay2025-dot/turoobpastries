@@ -6,6 +6,8 @@ import { Lines, Totals } from '../components/Summary'
 import { WA, WhatsAppIcon } from '../components/Layout'
 import { getOrderByToken, paystackInit } from '../lib/supabase'
 import { tokenFromRoute, stageIndex, messageOf, prettyDate, type OrderView } from '../lib/orderView'
+import LottieAnimation from '../components/LottieAnimation'
+import Loader from '../components/Loader'
 
 export const stepsFor = (m: 'pickup' | 'delivery') => ['Received', 'Preparing', m === 'delivery' ? 'Out for delivery' : 'Ready for pickup', 'Completed']
 
@@ -85,7 +87,7 @@ export default function Confirmation() {
     }
   }
 
-  if (state === 'loading') return <Plain title="Loading your order…" />
+  if (state === 'loading') return <main className="mx-auto max-w-lg px-4"><Loader page label="Loading your order…" /></main>
   if (state === 'error') return <Plain title="Couldn’t load your order" actions={<Button onClick={() => { setState('loading'); load() }}>Try again</Button>}>Please check your connection and try again.</Plain>
   if (state === 'missing' || !data) return <Plain title="No order found" actions={<><Button onClick={() => go('#/order')}>Order now</Button><Button variant="secondary" onClick={() => go('#/status')}>Track order</Button></>}>Use the link in your confirmation email, or look up an order with your order number.</Plain>
   if (needsFeeStep) return <Plain title="Opening your order…" />
@@ -128,7 +130,7 @@ export default function Confirmation() {
   return (
     <main className="mx-auto max-w-3xl px-4 pb-16 pt-10 sm:px-6">
       <div className="rounded-4xl bg-white p-6 text-center shadow-pop sm:p-10">
-        <PuffIllustration />
+        <LottieAnimation className="mx-auto size-40" />
         <h1 className="mt-4 text-4xl font-semibold sm:text-5xl">Order confirmed!</h1>
         <p className="mt-2 text-ink-soft">Thank you, {data.customer_name.split(' ')[0]}. Your puff-puff is on its way to the fryer.</p>
         <div className="mx-auto mt-6 inline-block rounded-2xl bg-yellow px-8 py-4"><p className="text-xs font-bold uppercase tracking-wider">Order number</p><p className="font-display text-3xl font-semibold tracking-wide">{data.order_number}</p></div>
