@@ -1,3 +1,4 @@
+import { useState, useEffect } from 'react'
 import { Notice, cx } from '../components/ui'
 import { BatchBanner, BatchPicker, ProductCard } from '../components/Blocks'
 import { CartPanel } from '../components/Summary'
@@ -5,9 +6,18 @@ import { useApp } from '../store'
 import { toProduct } from '../lib/products'
 import Loader from '../components/Loader'
 
+// Minimum time the loader is shown so it is actually visible before content renders.
+const MIN_LOAD_MS = 800
+
 export default function Order() {
   const { closed, count, products, productsError, productsLoading, currentBatch } = useApp()
   const soldOut = !!currentBatch?.is_sold_out
+  const [loaded, setLoaded] = useState(false)
+
+  useEffect(() => {
+    const timer = setTimeout(() => setLoaded(true), MIN_LOAD_MS)
+    return () => clearTimeout(timer)
+  }, [])
 
   return (
     <main className="mx-auto max-w-6xl px-4 pb-32 pt-8 sm:px-6 lg:pb-10">
@@ -31,7 +41,7 @@ export default function Order() {
             <p className="rounded-2xl bg-white p-6 text-center font-semibold text-red-dark shadow-soft sm:col-span-2">
               Couldn’t load the menu. Please refresh the page.
             </p>
-          ) : productsLoading ? (
+          ) : productsLoading || !loaded ? (
             <div className="sm:col-span-2"><Loader label="Loading the menu…" /></div>
           ) : (
             products.map(toProduct).map((p) => (

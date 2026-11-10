@@ -182,6 +182,8 @@ export default function Home() {
   const [team, setTeam] = useState<TeamMember[]>([])
   const [productsError, setProductsError] = useState(false)
   const [loading, setLoading] = useState(true)
+  // Minimum time the loader is shown so it is actually visible before content renders.
+  const [loaded, setLoaded] = useState(false)
 
   useEffect(() => {
     let alive = true
@@ -216,6 +218,11 @@ export default function Home() {
     return () => { alive = false }
   }, [])
 
+  useEffect(() => {
+    const timer = setTimeout(() => setLoaded(true), 800)
+    return () => clearTimeout(timer)
+  }, [])
+
   const activeReviews = reviews.length > 0 ? reviews : FALLBACK_REVIEWS
   const activeTeam = team.length > 0 ? team : FALLBACK_TEAM
 
@@ -244,7 +251,7 @@ export default function Home() {
             <p className="rounded-2xl bg-white p-6 text-center font-semibold text-red-dark shadow-soft">
               Couldn’t load the menu. Please refresh the page.
             </p>
-          ) : loading ? (
+          ) : loading || !loaded ? (
             <Loader label="Loading the menu…" />
           ) : (
             <div className="grid gap-5 md:grid-cols-3">

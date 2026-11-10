@@ -1,9 +1,9 @@
-import { useEffect, useState } from 'react'
-import { Lottie } from 'lottie-react'
+import { useEffect, useMemo, useRef, useState } from 'react'
+import { Lottie, type LottieHandle } from 'lottie-react'
 import { Loader2 } from 'lucide-react'
 // Saved copy of https://lottie.host/c09c57c4-8ab6-41f1-aadf-b7fc86778ce4/ugxcGKzIAS.json
 // Save that file as src/assets/loader.json so the loader works offline.
-import loaderJson from './.././../src/assets/loader.json'
+import loaderJson from '../assets/loader.json'
 
 // Turoob brand colours
 const YELLOW = '#FFC107'
@@ -60,6 +60,14 @@ type Props = {
 export default function LottieAnimation({ className, loop = true, autoplay = true }: Props) {
   const [data, setData] = useState<object | null>(null)
   const [failed, setFailed] = useState(false)
+  const handle = useRef<LottieHandle>(null)
+
+  // lottie-react skips autoplay when the device has "reduce motion" switched on, which leaves the
+  // loader frozen on its first frame. A loading indicator is essential feedback, so start it anyway.
+  const subscriptions = useMemo(
+    () => ({ ready: () => { if (autoplay) handle.current?.play() } }),
+    [autoplay],
+  )
 
   useEffect(() => {
     try {
@@ -79,8 +87,13 @@ export default function LottieAnimation({ className, loop = true, autoplay = tru
     )
   }
 
-  // Keeps the space reserved for the first frame.
-  if (!data) return <div className={className} aria-hidden />
+  // Always show visible feedback while the animation is being prepared.
+  if (!data)
+    return (
+      <div className={className} aria-hidden>
+        <Loader2 className="size-full animate-spin text-red" />
+      </div>
+    )
 
-  return <Lottie src={data} loop={loop} autoplay={autoplay} className={className} aria-hidden />
+  return <Lottie src={data} loop={loop} autoplay={autoplay} lottieRef={handle} subscriptions={subscriptions} className={className} aria-hidden />
 }

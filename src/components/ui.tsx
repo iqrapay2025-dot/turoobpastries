@@ -20,7 +20,7 @@ export function Button({ variant = 'primary', size = 'md', loading, full, classN
       className={cx('group/btn inline-flex items-center justify-center gap-2 rounded-full font-semibold transition duration-200 [&>svg:last-child:not(.spin)]:transition-transform hover:[&>svg:last-child:not(.spin)]:translate-x-1 focus-visible:outline-3 focus-visible:outline-offset-3 focus-visible:outline-red',
         s, v, full && 'w-full', (disabled || loading) && 'bg-ink/10! text-ink/40! shadow-none! border-ink/10! hover:bg-ink/10! hover:translate-y-0!', className)}
       {...p}>
-      {loading && <Loader2 className="spin size-4" />}
+      {loading && <Loader2 className="spin size-4 text-red" />}
       {children}
     </button>
   )
