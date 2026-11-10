@@ -10,10 +10,39 @@
     <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
     <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
     <link rel="manifest" href="/site.webmanifest">
+    <style>
+      /* Startup loader: pure HTML/CSS so it paints before any JavaScript has loaded. */
+      #boot-loader {
+        position: fixed; inset: 0; z-index: 9999;
+        display: grid; place-items: center; align-content: center; gap: 18px;
+        background: #FFF8EC; transition: opacity .35s ease;
+      }
+      #boot-loader.boot-hide { opacity: 0; pointer-events: none; }
+      #boot-loader .boot-ring {
+        position: relative; width: 112px; height: 112px; border-radius: 50%;
+        display: grid; place-items: center;
+      }
+      #boot-loader .boot-ring::before {
+        content: ''; position: absolute; inset: 0; border-radius: 50%;
+        border: 7px solid #FFE9A0; border-top-color: #D62828;
+        animation: boot-spin .9s linear infinite;
+      }
+      #boot-loader img {
+        width: 76px; height: 76px; border-radius: 50%; object-fit: cover;
+      }
+      #boot-loader p {
+        margin: 0; font: 600 15px/1.2 system-ui, sans-serif; color: #2B2B2B;
+      }
+      @keyframes boot-spin { to { transform: rotate(360deg); } }
+    </style>
     <!-- figma:head-end -->
   </head>
   <body>
     <!-- figma:body-start -->
+    <div id="boot-loader" role="status" aria-live="polite">
+      <div class="boot-ring"><img src="/logo.jpg" alt="" /></div>
+      <p>Loading…</p>
+    </div>
     <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>
     <!-- figma:body-end -->

@@ -1,7 +1,7 @@
 import t1 from '../assets/team-t1.jpg'
 import t2 from '../assets/team-t2.jpg'
 import t3 from '../assets/team-t3.jpg'
-import { useRef, useState, useEffect } from 'react'
+import { useRef, useState, useEffect } from 'react'     
 import { ArrowRight, UtensilsCrossed, Truck, ShieldCheck, Cookie, MapPin, ChevronLeft, ChevronRight } from 'lucide-react'
 import { useApp } from '../store'
 import { fetchProducts, fetchReviews, fetchTeamMembers } from '../lib/supabase'

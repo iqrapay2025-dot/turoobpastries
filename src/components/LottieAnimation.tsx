@@ -1,8 +1,8 @@
-import { useEffect, useMemo, useRef, useState } from 'react'
-import { Lottie, type LottieHandle } from 'lottie-react'
+import { useEffect, useRef, useState } from 'react'
+import lottie, { type AnimationItem } from 'lottie-web'
 import { Loader2 } from 'lucide-react'
+import { cx } from './ui'
 // Saved copy of https://lottie.host/c09c57c4-8ab6-41f1-aadf-b7fc86778ce4/ugxcGKzIAS.json
-// Save that file as src/assets/loader.json so the loader works offline.
 import loaderJson from '../assets/loader.json'
 
 // Turoob brand colours
@@ -40,15 +40,16 @@ function recolor(node: any, layerColor?: string): void {
   for (const key of Object.keys(node)) recolor(node[key], colour)
 }
 
-// Recolour once, then reuse for every loader on the site.
-let animation: object | null = null
+// Recolour once and keep the result. lottie-web edits the data it is given while loading,
+// so every instance gets its own copy of this recoloured version.
+let recoloured: object | null = null
 function getAnimation(): object {
-  if (!animation) {
+  if (!recoloured) {
     const copy = structuredClone(loaderJson) as object
     recolor(copy)
-    animation = copy
+    recoloured = copy
   }
-  return animation
+  return structuredClone(recoloured)
 }
 
 type Props = {
@@ -58,27 +59,33 @@ type Props = {
 }
 
 export default function LottieAnimation({ className, loop = true, autoplay = true }: Props) {
-  const [data, setData] = useState<object | null>(null)
+  const box = useRef<HTMLDivElement>(null)
+  const [ready, setReady] = useState(false)
   const [failed, setFailed] = useState(false)
-  const handle = useRef<LottieHandle>(null)
-
-  // lottie-react skips autoplay when the device has "reduce motion" switched on, which leaves the
-  // loader frozen on its first frame. A loading indicator is essential feedback, so start it anyway.
-  const subscriptions = useMemo(
-    () => ({ ready: () => { if (autoplay) handle.current?.play() } }),
-    [autoplay],
-  )
 
   useEffect(() => {
+    const el = box.current
+    if (!el) return
+    let anim: AnimationItem | undefined
     try {
-      setData(getAnimation())
+      anim = lottie.loadAnimation({
+        container: el,
+        renderer: 'svg',
+        loop,
+        autoplay,
+        animationData: getAnimation(),
+        rendererSettings: { preserveAspectRatio: 'xMidYMid meet' },
+      })
+      anim.addEventListener('DOMLoaded', () => setReady(true))
+      anim.addEventListener('data_failed', () => setFailed(true))
     } catch (e) {
-      console.error('Could not prepare animation:', e)
+      console.error('Could not start loader animation:', e)
       setFailed(true)
     }
-  }, [])
+    return () => anim?.destroy()
+  }, [loop, autoplay])
 
-  // Plain spinner if the animation can't be prepared.
+  // Plain spinner if the animation can't run.
   if (failed) {
     return (
       <div className={className} aria-hidden>
@@ -87,13 +94,11 @@ export default function LottieAnimation({ className, loop = true, autoplay = tru
     )
   }
 
-  // Always show visible feedback while the animation is being prepared.
-  if (!data)
-    return (
-      <div className={className} aria-hidden>
-        <Loader2 className="size-full animate-spin text-red" />
-      </div>
-    )
-
-  return <Lottie src={data} loop={loop} autoplay={autoplay} lottieRef={handle} subscriptions={subscriptions} className={className} aria-hidden />
+  // The spinner stays visible until the animation has actually drawn, so there is never an empty gap.
+  return (
+    <div className={cx('relative', className)} aria-hidden>
+      {!ready && <Loader2 className="absolute inset-0 size-full animate-spin text-red" />}
+      <div ref={box} className="size-full" />
+    </div>
+  )
 }
