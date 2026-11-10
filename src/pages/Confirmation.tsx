@@ -157,7 +157,8 @@ export default function Confirmation() {
         <Tracker steps={stepsFor(data.fulfilment)} current={stageIndex(data.order_status)} />
       </section>
       <div className="mt-6 flex flex-col gap-3 sm:flex-row sm:justify-center">
-        <Button size="lg" onClick={() => go('#/status')}>Track my order</Button>
+                <Button size="lg" onClick={() => go('#/status')}>Track my order</Button>
+        <Button size="lg" variant="secondary" onClick={() => go('#/my-orders')}>My orders</Button>
         <a href={WA} target="_blank" rel="noreferrer"><Button size="lg" variant="dark" full><WhatsAppIcon className="size-5" />Chat with us on WhatsApp</Button></a>
         <Button size="lg" variant="secondary" onClick={() => go('#/')}>Back home</Button>
       </div>

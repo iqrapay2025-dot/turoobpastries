@@ -42,7 +42,8 @@ export function Header() {
     ['Order', () => go('#/order')],
     ['Meet the Team', () => section('team')],
     ['Reviews', () => section('reviews')],
-    ['FAQ', () => section('faq')],
+        ['FAQ', () => section('faq')],
+    ['My orders', () => go('#/my-orders')],
   ]
   const mobileLinks: [string, () => void][] = [...links, ['Track my order', () => go('#/status')]]
 
@@ -123,7 +124,8 @@ export function Footer() {
           <h4 className="mb-3 text-lg text-yellow">Quick links</h4>
           <ul className="text-white/80">
             <li><a href="#/order" className="flex min-h-11 items-center hover:text-yellow">Order</a></li>
-            <li><a href="#/status" className="flex min-h-11 items-center hover:text-yellow">Track my order</a></li>
+                        <li><a href="#/status" className="flex min-h-11 items-center hover:text-yellow">Track my order</a></li>
+            <li><a href="#/my-orders" className="flex min-h-11 items-center hover:text-yellow">My orders</a></li>
             <li><a href="#/admin" className="flex min-h-11 items-center hover:text-yellow">Team login</a></li>
             <li><button onClick={() => section('team')} className="flex min-h-11 items-center hover:text-yellow">Meet the Team</button></li>
             <li><button onClick={() => section('faq')} className="flex min-h-11 items-center hover:text-yellow">FAQ</button></li>
@@ -134,7 +136,8 @@ export function Footer() {
           <ul className="text-white/80">
             <li className="flex min-h-11 items-center gap-2"><WhatsAppIcon className="size-4 text-yellow" />WhatsApp: +2347087936401</li>
             <li><a href="https://instagram.com/turoobpastries" target="_blank" rel="noreferrer" className="flex min-h-11 items-center gap-2 hover:text-yellow"><Camera className="size-4 text-yellow" />@turoobpastries</a></li>
-            <li><a href="mailto:turoobpastries@gmail.com" className="flex min-h-11 items-center gap-2 hover:text-yellow"><Mail className="size-4 text-yellow" />hello@turoob.example</a></li>
+            <li><a href="mailto:turoobpastries@gmail.com" className="flex min-h-11 items-center gap-2 hover:text-yellow"><Mail className="size-4 text-yellow" />turoobpastries@gmail.com</a></li>
+            <a href="#/privacy">Privacy Policy</a> · <a href="#/terms">Terms of Service</a>
           </ul>
         </div>
       </div>
