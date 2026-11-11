@@ -6,6 +6,9 @@ import { stepsFor } from './Confirmation'
 import { naira } from '../data'
 import { trackOrder } from '../lib/supabase'
 import { stageIndex, prettyDate, messageOf, type OrderView } from '../lib/orderView'
+import QrCode from '../components/QrCode'
+import { scanUrl } from '../lib/scan'
+import ReorderButton from '../components/ReorderButton'
 
 // Shape returned by the track_order database function.
 type TrackView = {
@@ -116,10 +119,19 @@ export default function Status() {
             ))}
           </ul>
 
+          <div className="mb-5"><ReorderButton lines={r.items} /></div>
+
           {cancelled ? (
             <Notice title="This order was cancelled">{r.payment_status === 'refunded' ? 'Your payment has been refunded. ' : paid ? 'We will refund your payment. ' : ''}You can place a new order any time.</Notice>
           ) : (
             <Tracker steps={stepsFor(r.fulfilment)} current={step} />
+          )}
+
+          {!cancelled && r.order_status !== 'completed' && (
+            <div className="mt-5 rounded-2xl bg-cream p-5 text-center">
+              <p className="text-sm font-semibold">Show this code when you collect or receive your order</p>
+              <QrCode value={scanUrl(r.order_number)} label={`QR code for order ${r.order_number}`} className="mx-auto mt-3 size-40 rounded-xl border border-ink/10" />
+            </div>
           )}
 
           {r.order_status === 'ready_for_pickup' && (

@@ -11,8 +11,13 @@ export type AOrder = {
   batch: BatchId; placed: string; notes: string
   paymentStatus?: string // raw payment_status: unpaid | paid | failed | refunded
   feeStatus?: string // optional: raw fee_status from the database, if AdminApp passes it
-    dbTotal?: number // the total stored in the database (what was actually charged)
-      batchDate?: string // the date of the batch, "YYYY-MM-DD"
+  dbTotal?: number // the total stored in the database (what was actually charged)
+  batchDate?: string // the date of the batch, "YYYY-MM-DD"
+  // Gift orders: the buyer pays, the recipient receives. Delivery address above is the recipient's.
+  isGift?: boolean
+  recipientName?: string
+  recipientPhone?: string
+  giftMessage?: string
 }
 
 export type Settings = {

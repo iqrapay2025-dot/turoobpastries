@@ -1,9 +1,10 @@
 import { useState } from 'react'
-import { Store, Bike, ChevronLeft, ShoppingBag } from 'lucide-react'
+import { Store, Bike, ChevronLeft, ShoppingBag, Gift } from 'lucide-react'
 import { useApp, type Fulfilment } from '../store'
 import { Button, EmptyState, Field, Notice, cx } from '../components/ui'
 import { Lines, Totals } from '../components/Summary'
-import { placeOrder, notify, paystackInit } from '../lib/supabase'
+import { placeOrder, notify, paystackInit, setGiftDetails, setPickupSlot } from '../lib/supabase'
+import { loadSavedCustomer, saveCustomer, forgetCustomer } from '../lib/savedCustomer'
 import { naira } from '../data'
 import Loader from '../components/Loader'
 
@@ -29,7 +30,11 @@ export default function Checkout() {
   } = useApp()
 
   // Pre-fill contact details from the customer's last order on this device.
-  const [f, setF] = useState({ name: order?.name ?? '', phone: order?.phone ?? '', email: order?.email ?? '', address: '', landmark: '', notes: '' })
+  const [saved, setSaved] = useState(loadSavedCustomer)
+  const [f, setF] = useState({ name: order?.name ?? saved.name, phone: order?.phone ?? saved.phone, email: order?.email ?? saved.email, address: '', landmark: '', notes: '' })
+  // Gift orders: the buyer pays, the recipient receives. Delivery goes to the recipient's address.
+  const [gift, setGift] = useState(false)
+  const [g, setG] = useState({ name: '', phone: '', message: '' })
   const [mode, setMode] = useState<Fulfilment>('pickup')
   const [zone, setZone] = useState<'on' | 'off'>('on')
   const [slot, setSlot] = useState('')
@@ -65,6 +70,8 @@ export default function Checkout() {
     phone: !/^(?:\+?234|0)[789][01]\d{8}$/.test(f.phone.replace(/[\s-]/g, '')) ? 'Enter a valid Nigerian number, e.g. 0803 123 4567 or +234 803 123 4567' : '',
     email: !/^[^\s@]+@[^\s@]+\.[A-Za-z]{2,}$/.test(f.email.trim()) ? 'Enter a valid email address' : '',
     address: mode === 'delivery' && f.address.trim().length < 3 ? 'Delivery address is required' : '',
+    gname: gift && g.name.trim().length < 2 ? 'Enter the name of the person receiving the gift' : '',
+    gphone: gift && !/^(?:\+?234|0)[789][01]\d{8}$/.test(g.phone.replace(/[\s-]/g, '')) ? 'Enter a valid Nigerian number for the recipient, e.g. 0803 123 4567' : '',
   }
   const valid = !Object.values(err).some(Boolean)
   const show = (k: keyof typeof err) => (touched || seen[k] ? err[k] : '')
@@ -82,6 +89,12 @@ export default function Checkout() {
     }
     if (submitting) return
     setSubmitting(true)
+    // The gift is also written into the order note, so the team sees it even if the
+    // structured gift details fail to save.
+    const giftNote = gift
+      ? `GIFT for ${g.name.trim()} (${g.phone.trim()})${g.message.trim() ? `. Message: ${g.message.trim()}` : ''}`
+      : ''
+    const orderNotes = [giftNote, f.notes.trim()].filter(Boolean).join(' | ')
     try {
       // Prices are never sent: the server calculates the totals.
       const result = (await placeOrder({
@@ -94,9 +107,28 @@ export default function Checkout() {
         delivery_address: mode === 'delivery' ? f.address.trim() : undefined,
         landmark: mode === 'delivery' ? f.landmark.trim() || undefined : undefined,
         delivery_slot: mode === 'delivery' ? chosenSlot || undefined : undefined,
-        notes: f.notes.trim() || undefined,
+        notes: orderNotes || undefined,
         items: items.map((i) => ({ product_id: i.id, quantity: i.qty })),
       })) as { order_number: string; public_token: string; track_code: string; total: number }
+
+      // Pickup window (best effort: the order is already placed).
+      if (mode === 'pickup' && chosenSlot) {
+        try { await setPickupSlot(result.public_token, chosenSlot) } catch (e) { console.error('Saving pickup time failed:', e) }
+      }
+      saveCustomer({ name: f.name.trim(), phone: f.phone.trim(), email: f.email.trim() })
+
+      // Attach the recipient. A failure here must not block the order (the note above still has it).
+      if (gift) {
+        try {
+          await setGiftDetails(result.public_token, {
+            recipient_name: g.name.trim(),
+            recipient_phone: g.phone.trim(),
+            gift_message: g.message.trim() || undefined,
+          })
+        } catch (e) {
+          console.error('Saving gift details failed:', e)
+        }
+      }
 
       setOrder({
         number: result.order_number,
@@ -162,6 +194,9 @@ export default function Checkout() {
       <div className="grid gap-6 lg:grid-cols-[1fr_380px]">
         <div className="space-y-5">
           <Section n={1} title="Your details">
+            {saved.name && !order && f.name === saved.name && (
+              <p className="mb-3 text-sm text-ink-soft">Welcome back, {saved.name.split(' ')[0]}. <button type="button" className="font-semibold text-red underline" onClick={() => { forgetCustomer(); setSaved({ name: '', phone: '', email: '' }); setF({ ...f, name: '', phone: '', email: '' }) }}>Not you?</button></p>
+            )}
             <div className="grid gap-4 sm:grid-cols-2">
               <div className="sm:col-span-2"><Field label="Full name" value={f.name} onChange={set('name')} error={show('name')} valid={!err.name && !!f.name} onBlur={blur('name')} placeholder="e.g. Aisha Bello" autoComplete="name" /></div>
               <Field label="Phone number" type="tel" value={f.phone} onChange={set('phone')} error={show('phone')} valid={!err.phone && !!f.phone} onBlur={blur('phone')} inputMode="tel" placeholder="0803 123 4567" autoComplete="tel" />
@@ -180,9 +215,17 @@ export default function Checkout() {
                 <p className="font-display text-lg font-semibold">{pickupPlace}</p>
                 <p className="mt-1 text-sm text-ink-soft">
                   {currentBatch.serving_time_label
-                    ? `Collect your ${dayName} order here (${currentBatch.serving_time_label}). Bring your order number.`
-                    : `Collect your ${dayName} order here. We will confirm the exact pickup time with you. Bring your order number.`}
+                    ? `Collect your ${dayName} order here (${currentBatch.serving_time_label}). Show your QR code or order number.`
+                    : `Collect your ${dayName} order here. Show your QR code or order number.`}
                 </p>
+                {daySlots.length > 0 && (
+                  <div className="mt-4">
+                    <p className="mb-2 text-sm font-semibold">Pickup time window</p>
+                    <div className="flex flex-wrap gap-2" role="radiogroup">
+                      {daySlots.map((s) => <button key={s} role="radio" aria-checked={chosenSlot === s} onClick={() => setSlot(s)} className={cx('min-h-11 rounded-full border-2 px-4 text-sm font-semibold transition', chosenSlot === s ? 'border-red bg-red text-white' : 'border-yellow bg-yellow-light/50 hover:bg-yellow')}>{s}</button>)}
+                    </div>
+                  </div>
+                )}
               </div>
             ) : (
               <div className="pop-in mt-5 space-y-5">
@@ -194,7 +237,7 @@ export default function Checkout() {
                     </button>
                   ))}
                 </div>
-                <Field label="Delivery address or location" value={f.address} onChange={set('address')} error={show('address')} valid={!err.address && !!f.address} onBlur={blur('address')} placeholder="e.g. Hall 3, Room 214, Unilorin" />
+                <Field label={gift ? 'Recipient’s delivery address or location' : 'Delivery address or location'} value={f.address} onChange={set('address')} error={show('address')} valid={!err.address && !!f.address} onBlur={blur('address')} placeholder="e.g. Hall 3, Room 214, Unilorin" />
                 <Field label="Landmark" optional value={f.landmark} onChange={set('landmark')} placeholder="e.g. Opposite the faculty gate" />
                 <div>
                   <p className="mb-2 text-sm font-semibold">Preferred time slot</p>
@@ -211,7 +254,43 @@ export default function Checkout() {
             )}
           </Section>
 
-          <Section n={3} title="Order notes">
+          <Section n={3} title="Is this a gift?">
+            <button
+              type="button"
+              role="switch"
+              aria-checked={gift}
+              onClick={() => setGift(!gift)}
+              className={cx('flex w-full items-center justify-between gap-4 rounded-2xl border-2 p-4 text-left transition', gift ? 'border-red bg-red-tint/50' : 'border-yellow-light hover:border-yellow')}
+            >
+              <span className="flex items-center gap-3">
+                <span className="grid size-10 shrink-0 place-items-center rounded-full bg-yellow-light text-red"><Gift className="size-5" /></span>
+                <span>
+                  <b className="block">Send this puff-puff as a gift</b>
+                  <span className="block text-sm text-ink-soft">You pay. We hand it to the person you choose.</span>
+                </span>
+              </span>
+              <span className={cx('relative h-7 w-12 shrink-0 rounded-full transition', gift ? 'bg-red' : 'bg-ink/20')}>
+                <span className={cx('absolute top-1 size-5 rounded-full bg-white shadow transition-all', gift ? 'left-6' : 'left-1')} />
+              </span>
+            </button>
+
+            {gift && (
+              <div className="pop-in mt-5 grid gap-4 sm:grid-cols-2">
+                <div className="sm:col-span-2"><Field label="Recipient’s full name" value={g.name} onChange={(e) => setG({ ...g, name: e.target.value })} error={show('gname')} valid={!err.gname && !!g.name} onBlur={blur('gname')} placeholder="e.g. Zainab Musa" /></div>
+                <div className="sm:col-span-2"><Field label="Recipient’s phone number" type="tel" value={g.phone} onChange={(e) => setG({ ...g, phone: e.target.value })} error={show('gphone')} valid={!err.gphone && !!g.phone} onBlur={blur('gphone')} inputMode="tel" placeholder="0803 123 4567" hint="We use this to reach them for delivery or pickup" /></div>
+                <div className="sm:col-span-2"><Field label="Gift message" optional value={g.message} onChange={(e) => setG({ ...g, message: e.target.value })} maxLength={200} placeholder="e.g. Happy birthday! Enjoy" /></div>
+                <div className="sm:col-span-2">
+                  <Notice>
+                    {mode === 'delivery'
+                      ? 'Enter the recipient’s address in the delivery section above. Your confirmation email and payment link come to you.'
+                      : 'The recipient collects at pickup. Share the order code from your confirmation page with them, or collect it yourself and hand it over.'}
+                  </Notice>
+                </div>
+              </div>
+            )}
+          </Section>
+
+          <Section n={4} title="Order notes">
             <Field label="Anything we should know?" optional value={f.notes} onChange={set('notes')} placeholder="e.g. Extra pepper please" />
           </Section>
         </div>

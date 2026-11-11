@@ -117,7 +117,7 @@ export function Footer() {
       <div className="mx-auto grid max-w-6xl gap-10 px-4 py-14 sm:px-6 md:grid-cols-[1.4fr_1fr_1fr]">
         <div>
           <Logo light />
-          <p className="mt-4 max-w-xs text-white/70">Hot, fresh puff-puff fried every Friday, Saturday and Sunday. Made by students, for Unilorin.</p>
+          <p className="mt-4 max-w-xs text-white/70">Hot, fresh puff-puff fried every Friday, Saturday and Sunday. Made by students, for Ilorin.</p>
           <span className="mt-5 inline-flex items-center gap-2 rounded-full bg-white/10 px-4 py-2 text-sm font-semibold"><ShieldCheck className="size-4 text-yellow" />Powered by Paystack</span>
         </div>
         <div>

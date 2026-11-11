@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
-import { Search, X, Phone, MapPin, Clock, Store, Bike, Send, CheckCircle2, ChefHat, PackageCheck, Flag, Flame, Droplets, GlassWater } from 'lucide-react'
+import { Search, X, Phone, MapPin, Clock, Store, Bike, Send, CheckCircle2, ChefHat, PackageCheck, Flag, Flame, Droplets, GlassWater, Gift } from 'lucide-react'
 import { Button, EmptyState, cx } from '../components/ui'
 import { BATCHES, naira, type BatchId } from '../data'
 import { Card, StagePill, PayPill } from './ui'
@@ -37,6 +37,16 @@ function Stat({ icon, label, value }: { icon: React.ReactNode; label: string; va
 
 function Row({ icon, children }: { icon: React.ReactNode; children: React.ReactNode }) {
   return <div className="flex gap-3 text-sm"><span className="mt-0.5 text-red">{icon}</span><div>{children}</div></div>
+}
+
+// Small tag shown in the orders list so gift orders stand out.
+function GiftTag({ o }: { o: AOrder }) {
+  if (!o.isGift) return null
+  return (
+    <span className="mt-1 inline-flex max-w-full items-center gap-1 rounded-full bg-yellow-light px-2 py-0.5 text-xs font-bold text-red-dark">
+      <Gift className="size-3 shrink-0" /><span className="truncate">Gift{o.recipientName ? ` for ${o.recipientName}` : ''}</span>
+    </span>
+  )
 }
 
 function BatchSummary() {
@@ -88,7 +98,7 @@ function Drawer({ no, onClose }: { no: string; onClose: () => void }) {
   if (!o) return null
 
   const pp = settings.puffPrice ?? PUFF_PRICE
-    const waHref = waLink(o.phone, orderMessage(o, 'Central Mosque, Unilorin'))
+  const waHref = waLink(o.phone, orderMessage(o, 'Central Mosque, Unilorin'))
 
   const run = async (fn: () => Promise<void>) => {
     if (busy) return
@@ -117,10 +127,18 @@ function Drawer({ no, onClose }: { no: string; onClose: () => void }) {
         </div>
         <div className="flex-1 space-y-6 overflow-y-auto p-5">
           <section className="space-y-3">
-            <h3 className="text-base font-semibold">Customer</h3>
+            {o.isGift && (
+              <div className="rounded-2xl border-2 border-yellow bg-yellow-light/50 p-3 text-sm">
+                <p className="flex items-center gap-2 font-bold"><Gift className="size-4 text-red" />Gift for {o.recipientName}</p>
+                {o.recipientPhone && <p className="mt-1"><a href={`tel:${o.recipientPhone}`} className="hover:underline">{o.recipientPhone}</a></p>}
+                {o.giftMessage && <p className="mt-1">“{o.giftMessage}”</p>}
+                <p className="mt-1 text-xs text-ink/70">Deliver or hand over to the recipient. The address below is theirs.</p>
+              </div>
+            )}
+            <h3 className="text-base font-semibold">{o.isGift ? 'Buyer' : 'Customer'}</h3>
             <p className="font-semibold">{o.name}</p>
             <Row icon={<Phone className="size-4" />}><a href={`tel:${o.phone}`} className="hover:underline">{o.phone}</a></Row>
-                        {waHref && (
+            {waHref && (
               <a href={waHref} target="_blank" rel="noreferrer" className="flex min-h-11 items-center justify-center gap-2 rounded-full bg-ink px-4 text-sm font-semibold text-white hover:bg-ink-soft">
                 <WhatsAppIcon className="size-4 text-yellow" />Message on WhatsApp
               </a>
@@ -173,7 +191,7 @@ function Drawer({ no, onClose }: { no: string; onClose: () => void }) {
         <div className="space-y-2 border-t border-ink/10 bg-cream/50 p-5">
           {showManualPaid && <Button full variant="secondary" disabled={busy} onClick={() => { if (window.confirm(`Mark ${o.no} as paid? Only do this if you have received the money outside Paystack.`)) run(() => markPaidManually(o.no)) }}><CheckCircle2 className="size-4" />Mark as paid manually</Button>}
           {next.filter((n) => n.show).map((n) => <Button key={n.stage} full size="lg" disabled={busy} onClick={() => run(async () => { await setStage(o.no, n.stage) })}>{n.icon}{n.label}</Button>)}
-                    {!cancelled && o.stage !== 'completed' && (
+          {!cancelled && o.stage !== 'completed' && (
             <Button full variant="ghost" disabled={busy} onClick={() => {
               const warn = o.paid ? ' It is already paid. After cancelling, refund the customer and mark it as refunded.' : ''
               if (window.confirm(`Cancel ${o.no}?${warn}`)) run(() => setStage(o.no, 'cancelled'))
@@ -192,7 +210,7 @@ export default function Orders() {
   const [tab, setTab] = useState<Stage | 'all'>('all')
   const [q, setQ] = useState('')
   const [open, setOpen] = useState<string | null>(null)
-    useEffect(() => {
+  useEffect(() => {
     const p = takePendingOrder()
     if (p) setOpen(p)
     return subscribeOpenOrder((no) => { takePendingOrder(); setOpen(no) })
@@ -202,7 +220,15 @@ export default function Orders() {
   const counts = useMemo(() => Object.fromEntries(STAGES.map((s) => [s.id, orders.filter((o) => inTab(o, s.id)).length])), [orders])
   const term = q.toLowerCase().trim()
   const qDigits = digits(q)
-  const list = orders.filter((o) => inTab(o, tab) && (!term || o.name.toLowerCase().includes(term) || o.no.toLowerCase().includes(term) || o.phone.includes(term) || (qDigits.length >= 4 && digits(o.phone).includes(qDigits))))
+  const matches = (o: AOrder) =>
+    !term ||
+    o.name.toLowerCase().includes(term) ||
+    o.no.toLowerCase().includes(term) ||
+    o.phone.includes(term) ||
+    (o.recipientName ?? '').toLowerCase().includes(term) ||
+    (o.recipientPhone ?? '').includes(term) ||
+    (qDigits.length >= 4 && (digits(o.phone).includes(qDigits) || digits(o.recipientPhone ?? '').includes(qDigits)))
+  const list = orders.filter((o) => inTab(o, tab) && matches(o))
   const view = (o: AOrder) => { markSeen(o.no); setOpen(o.no) }
   const isNew = (o: AOrder) => (o.stage === 'new' || o.stage === 'paid') && !seen.has(o.no)
   const tot = (o: AOrder) => total(o, settings.zoboPrice, settings.puffPrice)
@@ -234,7 +260,7 @@ export default function Orders() {
                 {list.map((o) => (
                   <tr key={o.no} tabIndex={0} onClick={() => view(o)} onKeyDown={(e) => e.key === 'Enter' && view(o)} className="cursor-pointer transition hover:bg-yellow-light/30 focus-visible:bg-yellow-light/40">
                     <td className="px-4 py-3.5 font-bold">{isNew(o) && <span className="mr-2 inline-block size-2 animate-pulse rounded-full bg-red align-middle" />}{o.no}<span className="block text-xs font-normal text-ink/70">{placedText(o.placed)}</span></td>
-                    <td className="px-4 py-3.5"><b className="font-semibold">{o.name}</b><span className="block text-xs text-ink/70">{o.phone}</span></td>
+                    <td className="px-4 py-3.5"><b className="font-semibold">{o.name}</b><span className="block text-xs text-ink/70">{o.phone}</span><GiftTag o={o} /></td>
                     <td className="px-4 py-3.5 text-ink-soft">{items(o)} items<span className="block text-xs text-ink/70">{[o.pepper && `${o.pepper} pepper`, o.plain && `${o.plain} plain`, o.zobo && `${o.zobo} zobo`].filter(Boolean).join(', ')}</span></td>
                     <td className="px-4 py-3.5">{o.mode === 'pickup' ? 'Pickup' : <>Delivery<span className="block max-w-42.5 truncate text-xs text-ink/70">{o.address}</span></>}</td>
                     <td className="px-4 py-3.5">{o.slot}</td>
@@ -252,6 +278,7 @@ export default function Orders() {
                 {isNew(o) && <span className="absolute right-4 top-4 size-2.5 animate-pulse rounded-full bg-red" />}
                 <div className="flex items-start justify-between gap-2 pr-4"><div><p className="font-display text-lg font-semibold">{o.no}</p><p className="text-xs text-ink/70">{placedText(o.placed)}</p></div><p className="font-display text-lg font-semibold text-red">{naira(tot(o))}</p></div>
                 <p className="mt-2 font-semibold">{o.name}</p>
+                <GiftTag o={o} />
                 <p className="text-sm text-ink/70">{items(o)} items · {o.mode === 'pickup' ? 'Pickup' : `Delivery, ${o.slot}`}</p>
                 <div className="mt-3 flex flex-wrap gap-2"><StagePill o={o} /><PayPill o={o} /></div>
               </button>

@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
-import { ClipboardList, Settings as Cog, Users, LogOut, Bell, ExternalLink, Eye, EyeOff, AlertCircle } from 'lucide-react'
+import { ClipboardList, Settings as Cog, Users, LogOut, Bell, ExternalLink, Eye, EyeOff, AlertCircle, ScanLine, MonitorPlay } from 'lucide-react'
 import { useApp } from '../store'
 import { Button, Field, Toasts, cx } from '../components/ui'
 import { Logo } from '../components/Layout'
@@ -8,6 +8,8 @@ import { A, type SlotsByDay } from './adminContext'
 import Orders from './Orders'
 import SettingsPage from './SettingsPage'
 import Customers from './Customers'
+import Scan from './Scan'
+import Queue from './Queue'
 import NotificationsPanel from './NotificationsPanel'
 import { requestOpenOrder } from './openOrder'
 import {
@@ -103,8 +105,22 @@ function Login({ onIn }: { onIn: () => void }) {
   )
 }
 
+// A scanned QR link (/admin/scan?o=TRB-1042) opened while signed out: remember it through the sign-in.
+const PENDING_SCAN = 'turoob_pending_scan'
+const takePendingScan = (): string => {
+  try {
+    const r = sessionStorage.getItem(PENDING_SCAN)
+    sessionStorage.removeItem(PENDING_SCAN)
+    return r && r.startsWith('#/admin/scan') ? r : '#/admin'
+  } catch {
+    return '#/admin'
+  }
+}
+
 const NAV = [
   { to: '#/admin', label: 'Orders', icon: ClipboardList },
+  { to: '#/admin/scan', label: 'Scan', icon: ScanLine },
+  { to: '#/admin/queue', label: 'Queue', icon: MonitorPlay },
   { to: '#/admin/settings', label: 'Settings', icon: Cog },
   { to: '#/admin/customers', label: 'Customers', icon: Users },
 ]
@@ -154,8 +170,13 @@ export default function AdminApp() {
   /* ---- route protection ---- */
   useEffect(() => {
     if (checking) return
-    if (!authed && route !== '#/admin/login') go('#/admin/login')
-    if (authed && route === '#/admin/login') go('#/admin')
+    if (!authed && route !== '#/admin/login') {
+      if (route.startsWith('#/admin/scan')) {
+        try { sessionStorage.setItem(PENDING_SCAN, route) } catch { /* storage unavailable */ }
+      }
+      go('#/admin/login')
+    }
+    if (authed && route === '#/admin/login') go(takePendingScan())
   }, [authed, checking, route, go])
 
   const signOut = async () => {
@@ -257,7 +278,7 @@ export default function AdminApp() {
           mode: o.fulfilment,
           zone: o.zone === 'off_campus' ? 'off' : 'on',
           address: o.delivery_address ?? '',
-          slot: o.delivery_slot ?? '',
+          slot: o.delivery_slot ?? o.pickup_slot ?? '',
           fee: o.delivery_fee ?? 0,
           feeFinal: o.fee_status !== 'pending_review',
           linkSent: o.fee_status === 'confirmed' || o.fee_status === 'accepted',
@@ -270,6 +291,10 @@ export default function AdminApp() {
           batchDate: o.batch_date,
           paymentStatus: o.payment_status,
           dbTotal: Number(o.total ?? 0),
+          isGift: !!o.is_gift,
+          recipientName: o.recipient_name ?? '',
+          recipientPhone: o.recipient_phone ?? '',
+          giftMessage: o.gift_message ?? '',
         } as unknown as AOrder & { id: string }
       })
       ordersRef.current = mapped
@@ -428,13 +453,14 @@ export default function AdminApp() {
   )
 
   if (checking) return <main className="mx-auto max-w-lg px-4"><Loader page label="Checking your session…" /></main>
-  if (!authed) return <><Login onIn={() => { setAuthed(true); go('#/admin') }} /><Toasts /></>
+  if (!authed) return <><Login onIn={() => { setAuthed(true); go(takePendingScan()) }} /><Toasts /></>
 
   const page = route.replace('#/admin', '')
   const body: ReactNode = page.startsWith('/settings')
     ? (settingsLoaded ? <SettingsPage /> : <p className="text-ink-soft">Loading settings…</p>)
-    : page.startsWith('/customers') ? <Customers /> : <Orders />
-  const active = (to: string) => (to === '#/admin' ? !page.startsWith('/settings') && !page.startsWith('/customers') : route.startsWith(to))
+    : page.startsWith('/customers') ? <Customers />
+      : page.startsWith('/queue') ? <Queue /> : page.startsWith('/scan') ? <Scan /> : <Orders />
+  const active = (to: string) => (to === '#/admin' ? !page.startsWith('/settings') && !page.startsWith('/customers') && !page.startsWith('/scan') && !page.startsWith('/queue') : route.startsWith(to))
 
   return (
     <A.Provider value={ctx}>

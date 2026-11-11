@@ -10,6 +10,7 @@ export type OrderView = {
   delivery_address: string | null
   landmark: string | null
   delivery_slot: string | null
+  pickup_slot?: string | null
   batch_date: string
   batch_label: string | null
   serving_time_label: string | null

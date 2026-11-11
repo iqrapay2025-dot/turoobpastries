@@ -8,6 +8,9 @@ import { getOrderByToken, paystackInit } from '../lib/supabase'
 import { tokenFromRoute, stageIndex, messageOf, prettyDate, type OrderView } from '../lib/orderView'
 import LottieAnimation from '../components/LottieAnimation'
 import Loader from '../components/Loader'
+import QrCode from '../components/QrCode'
+import { scanUrl } from '../lib/scan'
+import ReorderButton from '../components/ReorderButton'
 
 export const stepsFor = (m: 'pickup' | 'delivery') => ['Received', 'Preparing', m === 'delivery' ? 'Out for delivery' : 'Ready for pickup', 'Completed']
 
@@ -147,18 +150,29 @@ export default function Confirmation() {
           <h2 className="mb-3 text-xl font-semibold">{delivery ? 'Delivery details' : 'Pickup details'}</h2>
           <div className="space-y-4 text-sm">
             <p className="flex gap-3"><MapPin className="mt-0.5 size-5 shrink-0 text-red" /><span>{delivery ? <>{data.delivery_address}{data.landmark && <span className="block text-ink/70">Near {data.landmark}</span>}</> : <>{pickupPlace}{data.serving_time_label && <span className="block text-ink/70">{data.serving_time_label}</span>}</>}</span></p>
-            <p className="flex gap-3"><Clock className="mt-0.5 size-5 shrink-0 text-red" /><span>{delivery ? `${when}${data.delivery_slot ? `, time slot ${data.delivery_slot}` : ', we will confirm your delivery time'}` : when}</span></p>
+            <p className="flex gap-3"><Clock className="mt-0.5 size-5 shrink-0 text-red" /><span>{delivery ? `${when}${data.delivery_slot ? `, time slot ${data.delivery_slot}` : ', we will confirm your delivery time'}` : `${when}${data.pickup_slot ? `, pickup ${data.pickup_slot}` : ''}`}</span></p>
           </div>
         </section>
       </div>
+
+      <div className="mt-5"><ReorderButton lines={data.items} /></div>
+
+      <section className="mt-5 rounded-[28px] bg-white p-6 text-center shadow-soft">
+        <h2 className="text-xl font-semibold">Your order code</h2>
+        <p className="mx-auto mt-1 max-w-sm text-sm text-ink-soft">
+          {delivery ? 'Show this code to our rider when your order arrives so we can scan it.' : 'Show this code at pickup so we can scan it and hand over your order.'}
+        </p>
+        <QrCode value={scanUrl(data.order_number)} label={`QR code for order ${data.order_number}`} className="mx-auto mt-4 size-48 rounded-2xl border border-ink/10" />
+        <p className="mt-2 font-display text-lg font-semibold tracking-wide">{data.order_number}</p>
+        <p className="mt-1 text-xs text-ink/70">Tip: take a screenshot so you have it even without data.</p>
+      </section>
 
       <section className="mt-5 rounded-[28px] bg-white p-6 shadow-soft">
         <h2 className="mb-5 text-xl font-semibold">Order status</h2>
         <Tracker steps={stepsFor(data.fulfilment)} current={stageIndex(data.order_status)} />
       </section>
       <div className="mt-6 flex flex-col gap-3 sm:flex-row sm:justify-center">
-                <Button size="lg" onClick={() => go('#/status')}>Track my order</Button>
-        <Button size="lg" variant="secondary" onClick={() => go('#/my-orders')}>My orders</Button>
+        <Button size="lg" onClick={() => go('#/status')}>Track my order</Button>
         <a href={WA} target="_blank" rel="noreferrer"><Button size="lg" variant="dark" full><WhatsAppIcon className="size-5" />Chat with us on WhatsApp</Button></a>
         <Button size="lg" variant="secondary" onClick={() => go('#/')}>Back home</Button>
       </div>

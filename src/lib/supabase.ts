@@ -65,6 +65,18 @@ export async function paystackInit(params: { public_token: string }) {
   return data as { authorization_url: string; reference: string }
 }
 
+// --- Gift orders: attach the recipient to an order just placed (needs turoob-gifts.sql) ---
+export async function setGiftDetails(token: string, details: { recipient_name: string; recipient_phone: string; gift_message?: string }) {
+  const { error } = await supabase.rpc('set_gift_details', { p_token: token, p_details: details })
+  if (error) throw error
+}
+
+// --- Pickup orders: record the chosen pickup window (needs turoob-pickup.sql) ---
+export async function setPickupSlot(token: string, slot: string) {
+  const { error } = await supabase.rpc('set_pickup_slot', { p_token: token, p_slot: slot })
+  if (error) throw error
+}
+
 // --- Get order by token ---
 export async function getOrderByToken(token: string) {
   const { data, error } = await supabase.rpc('get_order_by_token', { p_token: token })
