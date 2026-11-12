@@ -3,17 +3,23 @@ import { useApp } from '../store'
 import { naira } from '../data'
 import { Button, EmptyState } from './ui'
 
-type Line = { id?: string; name: string; qty: number; price: number }
+// Cart lines use qty/price. Saved orders from the database use quantity/unit_price/line_total.
+// Accept both so the summary never shows a blank quantity or NaN.
+type Line = { id?: string; name: string; qty?: number; quantity?: number; price?: number; unit_price?: number; line_total?: number }
 
 export function Lines({ items }: { items: Line[] }) {
   return (
     <ul className="divide-y divide-yellow-light">
-      {items.map((i, idx) => (
-        <li key={i.id ?? `${i.name}-${idx}`} className="flex justify-between gap-3 py-2.5 text-sm">
-          <span><b className="font-semibold">{i.qty}×</b> {i.name}</span>
-          <span className="font-semibold">{naira(i.qty * i.price)}</span>
-        </li>
-      ))}
+      {items.map((i, idx) => {
+        const qty = Number(i.qty ?? i.quantity ?? 0)
+        const amount = i.line_total != null ? Number(i.line_total) : qty * Number(i.price ?? i.unit_price ?? 0)
+        return (
+          <li key={i.id ?? `${i.name}-${idx}`} className="flex justify-between gap-3 py-2.5 text-sm">
+            <span><b className="font-semibold">{qty}×</b> {i.name}</span>
+            <span className="font-semibold">{naira(amount)}</span>
+          </li>
+        )
+      })}
     </ul>
   )
 }

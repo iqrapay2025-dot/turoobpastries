@@ -20,7 +20,7 @@ export type OrderView = {
   fee_status: 'not_applicable' | 'pending_review' | 'confirmed' | 'accepted' | 'declined'
   payment_status: 'unpaid' | 'paid' | 'failed' | 'refunded'
   order_status: 'received' | 'preparing' | 'out_for_delivery' | 'ready_for_pickup' | 'completed' | 'cancelled'
-  items: Array<{ id: string; name: string; qty: number; price: number }>
+  items: Array<{ id?: string; name: string; qty?: number; quantity?: number; price?: number; unit_price?: number; line_total?: number }>
 }
 
 // "#/fee?token=abc" -> "abc"

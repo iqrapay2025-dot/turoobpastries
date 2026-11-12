@@ -1,7 +1,9 @@
 import { useEffect, useState } from 'react'
-import { LogOut, Mail, KeyRound, Receipt } from 'lucide-react'
+import { LogOut, Mail, KeyRound, Receipt, QrCode as QrIcon } from 'lucide-react'
 import { useApp } from '../store'
-import { Badge, Button, Field, Notice, EmptyState } from '../components/ui'
+import { Badge, Button, Field, Notice, EmptyState, Modal } from '../components/ui'
+import QrCode from '../components/QrCode'
+import { scanUrl } from '../lib/scan'
 import { stepsFor } from './Confirmation'
 import { naira } from '../data'
 import { supabase } from '../lib/supabase'
@@ -56,9 +58,12 @@ async function call<T>(body: Record<string, unknown>): Promise<T> {
 }
 
 function OrderCard({ o }: { o: MyOrder }) {
+  const [qrOpen, setQrOpen] = useState(false)
   const cancelled = o.order_status === 'cancelled'
   const paid = o.payment_status === 'paid'
   const steps = stepsFor(o.fulfilment)
+  // Same rule as the Track page: the code is useful until the order is collected or cancelled.
+  const showQr = !cancelled && o.order_status !== 'completed'
   return (
     <article className="rounded-[28px] bg-white p-5 shadow-soft">
       <div className="flex items-start justify-between gap-3">
@@ -84,6 +89,30 @@ function OrderCard({ o }: { o: MyOrder }) {
         <span className="text-sm font-semibold">Total</span>
         <span className="font-display text-lg font-semibold">{naira(o.total)}</span>
       </div>
+      {showQr && (
+        <>
+          <Button full variant="secondary" className="mt-4" onClick={() => setQrOpen(true)}><QrIcon className="size-4" />Show QR code</Button>
+          <Modal open={qrOpen} onClose={() => setQrOpen(false)} title="Your order code">
+            <div className="max-h-[70vh] overflow-y-auto text-center">
+              <p className="mx-auto max-w-xs text-sm text-ink-soft">
+                {o.fulfilment === 'delivery' ? 'Show this code to our rider when your order arrives so we can scan it.' : 'Show this code at pickup so we can scan it and hand over your order.'}
+              </p>
+              <QrCode value={scanUrl(o.order_number)} label={`QR code for order ${o.order_number}`} className="mx-auto mt-4 size-52 rounded-2xl border border-ink/10" />
+              <div className="mx-auto mt-4 inline-block rounded-2xl bg-yellow px-8 py-3">
+                <p className="text-xs font-bold uppercase tracking-wider">Order number</p>
+                <p className="font-display text-2xl font-semibold tracking-wide">{o.order_number}</p>
+              </div>
+              <div className="mx-auto mt-3 block w-fit rounded-2xl bg-cream px-6 py-3">
+                <p className="text-xs font-bold uppercase tracking-wider">Tracking code</p>
+                <p className="font-display text-xl font-semibold tracking-widest">{o.track_code}</p>
+                <p className="mt-1 max-w-xs text-xs text-ink/70">Keep this private. You need it, plus your phone number, to track your order.</p>
+              </div>
+              <p className="mt-4 text-sm text-ink-soft">{prettyDate(o.batch_date)} · {o.fulfilment === 'delivery' ? 'Delivery' : 'Pickup'} · {naira(o.total)}</p>
+              {!paid && <p className="mt-2 text-sm font-semibold text-red">This order is not paid yet.</p>}
+            </div>
+          </Modal>
+        </>
+      )}
     </article>
   )
 }
