@@ -20,6 +20,7 @@ export type AOrder = {
   giftMessage?: string
     customerCode?: string // e.g. CUS-00007
   customerBlocked?: boolean
+    bonusPuffs?: number // free puff-puffs won in the waiting game, to add at handover
 }
 
 export type Settings = {

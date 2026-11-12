@@ -11,6 +11,7 @@ import Loader from '../components/Loader'
 import QrCode from '../components/QrCode'
 import { scanUrl } from '../lib/scan'
 import ReorderButton from '../components/ReorderButton'
+import OrderGame from '../components/OrderGame'
 
 export const stepsFor = (m: 'pickup' | 'delivery') => ['Received', 'Preparing', m === 'delivery' ? 'Out for delivery' : 'Ready for pickup', 'Completed']
 
@@ -155,6 +156,7 @@ export default function Confirmation() {
         </section>
       </div>
 
+            {token && ['received', 'preparing'].includes(data.order_status) && <OrderGame token={token} />}
       <div className="mt-5"><ReorderButton lines={data.items} /></div>
 
       <section className="mt-5 rounded-[28px] bg-white p-6 text-center shadow-soft">

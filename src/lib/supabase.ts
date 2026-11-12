@@ -77,6 +77,35 @@ export async function setPickupSlot(token: string, slot: string) {
   if (error) throw error
 }
 
+// --- Waiting-time games (turoob-games.sql). All answers are checked in the database. ---
+export type GameKind = 'riddle' | 'puzzle' | 'math' | 'memory'
+export type GameStatus = { enabled: boolean; eligible?: boolean; prizes_left?: boolean; status?: 'none' | 'playing' | 'won' | 'lost'; kind?: GameKind | null; bonus_puffs?: number }
+export type GamePayload =
+  | { kind: 'riddle' | 'puzzle' | 'math'; questions: Array<{ question: string; options: string[] }> }
+  | { kind: 'memory'; size: number; max_moves: number; moves: number; matched: Array<{ idx: number; symbol: string }> }
+export type FlipResult = { symbol: string; phase: 'first' | 'second'; first?: number; match?: boolean; moves?: number; done?: boolean; won?: boolean; awarded?: boolean }
+export type SubmitResult = { won: boolean; correct: number; total: number; answers: string[]; awarded: boolean }
+
+export async function gameStatus(token: string) {
+  const { data, error } = await supabase.rpc('game_status', { p_token: token })
+  if (error) throw error
+  return data as GameStatus
+}
+export async function gameStart(token: string, kind: GameKind) {
+  const { data, error } = await supabase.rpc('game_start', { p_token: token, p_kind: kind })
+  if (error) throw error
+  return data as GamePayload
+}
+export async function gameSubmit(token: string, answers: string[]) {
+  const { data, error } = await supabase.rpc('game_submit', { p_token: token, p_answers: answers })
+  if (error) throw error
+  return data as SubmitResult
+}
+export async function gameFlip(token: string, idx: number) {
+  const { data, error } = await supabase.rpc('game_flip', { p_token: token, p_idx: idx })
+  if (error) throw error
+  return data as FlipResult
+}
 // --- Get order by token ---
 export async function getOrderByToken(token: string) {
   const { data, error } = await supabase.rpc('get_order_by_token', { p_token: token })

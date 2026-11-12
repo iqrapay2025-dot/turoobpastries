@@ -127,6 +127,11 @@ function Drawer({ no, onClose }: { no: string; onClose: () => void }) {
         </div>
         <div className="flex-1 space-y-6 overflow-y-auto p-5">
           <section className="space-y-3">
+                        {(o.bonusPuffs ?? 0) > 0 && (
+              <div className="rounded-2xl border-2 border-red bg-red-tint/60 p-3 text-sm">
+                <p className="font-bold">🎉 Won the game: add {o.bonusPuffs} FREE puff-puff</p>
+              </div>
+            )}
             {o.isGift && (
               <div className="rounded-2xl border-2 border-yellow bg-yellow-light/50 p-3 text-sm">
                 <p className="flex items-center gap-2 font-bold"><Gift className="size-4 text-red" />Gift for {o.recipientName}</p>

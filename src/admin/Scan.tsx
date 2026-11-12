@@ -179,6 +179,12 @@ export default function Scan() {
           </div>
 
           <div className="space-y-4 p-5">
+                        {(order.bonusPuffs ?? 0) > 0 && (
+              <div className="rounded-2xl border-2 border-red bg-red-tint/60 p-3 text-sm">
+                <p className="font-bold">🎉 Won the game: add {order.bonusPuffs} FREE puff-puff</p>
+                <p className="mt-1 text-xs text-ink/70">Put one extra puff-puff in this order before handing it over.</p>
+              </div>
+            )}
             {order.isGift && (
               <div className="rounded-2xl border-2 border-yellow bg-yellow-light/50 p-3 text-sm">
                 <p className="flex items-center gap-2 font-bold"><Gift className="size-4 text-red" />Gift for {order.recipientName}</p>

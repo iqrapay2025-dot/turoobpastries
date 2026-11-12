@@ -1,5 +1,6 @@
 import { useState, useEffect, type ReactNode } from 'react'
 import { ShoppingBag, Menu, X, Camera, Mail, ShieldCheck, ArrowRight } from 'lucide-react'
+import { Analytics } from '@vercel/analytics/react'
 import { useApp } from '../store'
 import { Button, Toasts, cx } from './ui'
 import { naira } from '../data'
@@ -172,5 +173,15 @@ export function CartBar() {
 }
 
 export function Shell({ children }: { children: ReactNode }) {
-  return (<><Header />{children}<Footer /><CartBar /><WhatsAppFab /><Toasts /></>)
+  return (
+    <>
+      <Analytics />
+      <Header />
+      {children}
+      <Footer />
+      <CartBar />
+      <WhatsAppFab />
+      <Toasts />
+    </>
+  )
 }
