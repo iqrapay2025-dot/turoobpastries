@@ -1,6 +1,8 @@
 import t1 from './assets/team-t1.jpg'
 import t2 from './assets/team-t2.jpg'
 import t3 from './assets/team-t3.jpg'
+import jumah from './assets/jumah muhammed.jpg'
+import abdulazeez from './assets/abdulazeez adegbite.jpg'
 export const IMG = {
   hero: 'https://images.unsplash.com/photo-1767324672458-7dec3a2acffa?w=1000&q=80&fit=crop',
   pepper: 'https://images.unsplash.com/photo-1665833613236-7c1d087463b1?w=800&q=80&fit=crop',
@@ -55,9 +57,10 @@ export const BATCHES: { id: BatchId; day: string; dow: number; when: string; cut
 export const naira = (n: number) => '₦' + n.toLocaleString('en-NG')
 
 export const TEAM = [
-  { name: 'AbdulAzeez Adegbite Ayomide', role: 'Founder and Head Fryer', img: 'https://images.unsplash.com/photo-1522529599102-193c0d76b5b6?w=600&q=80&fit=crop' },
+  { name: 'AbdulAzeez Adegbite Ayomide', role: 'Founder and Head Fryer', img: abdulazeez },
   { name: 'Ademola Khalif', role: 'Team member', img: 'https://images.unsplash.com/photo-1614023342667-6f060e9d1e04?w=600&q=80&fit=crop' },
-  { name: 'Jumah Muhammed O.', role: 'Team member', img: 'https://images.unsplash.com/photo-1783012039560-5690190a9b9b?w=600&q=80&fit=crop' },
+  { name: 'Muhammadulawwal Abdulsamod', role: 'Team member', img: 'https://images.unsplash.com/photo-1614023342667-6f060e9d1e04?w=600&q=80&fit=crop' },
+  { name: 'Jumah Muhammed O.', role: 'Team member', img: jumah },
   { name: 'Yisau Shukroh', role: 'Team member', img: t1 },
   { name: 'Fatimah Salahudeen', role: 'Team member', img: t2 },
   { name: 'Masruroh Fasasi', role: 'Team member', img: t3 },
