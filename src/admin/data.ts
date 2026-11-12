@@ -18,6 +18,8 @@ export type AOrder = {
   recipientName?: string
   recipientPhone?: string
   giftMessage?: string
+    customerCode?: string // e.g. CUS-00007
+  customerBlocked?: boolean
 }
 
 export type Settings = {

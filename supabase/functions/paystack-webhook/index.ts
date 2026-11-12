@@ -65,13 +65,13 @@ Deno.serve(async (req) => {
     // reference is an older attempt, fall back to the order number Paystack echoes back.
     let { data: order } = await db
       .from("orders")
-      .select("*, order_items(*)")
+      .select("*, order_items(*), customers(customer_code)")
       .eq("paystack_reference", reference)
       .maybeSingle();
     if (!order && v.data.metadata?.order_number) {
       ({ data: order } = await db
         .from("orders")
-        .select("*, order_items(*)")
+        .select("*, order_items(*), customers(customer_code)")
         .eq("order_number", v.data.metadata.order_number)
         .maybeSingle());
     }
@@ -86,6 +86,18 @@ Deno.serve(async (req) => {
       return new Response("amount mismatch", { status: 200 });
     }
 
+    // Remember Paystack's own customer code against our customer ID.
+    const pcode = v.data.customer?.customer_code;
+    if (pcode && order.customer_id) {
+      await db.from("customers").update({ paystack_customer_code: pcode })
+        .eq("id", order.customer_id).is("paystack_customer_code", null);
+    }
+    const metaCode = v.data.metadata?.customer_code;
+    if (metaCode && order.customer_id) {
+      const { data: c } = await db.from("customers").select("customer_code").eq("id", order.customer_id).maybeSingle();
+      if (c && c.customer_code !== metaCode) console.error("Customer ID mismatch", reference, metaCode, c.customer_code);
+    }
+
     if (order.payment_status !== "paid") {
       const { error: upErr } = await db
         .from("orders")
@@ -97,7 +109,7 @@ Deno.serve(async (req) => {
         return new Response("update failed", { status: 500 });
       }
 
-            if (order.order_status === "cancelled") {
+      if (order.order_status === "cancelled") {
         const team = Deno.env.get("TEAM_EMAIL");
         if (team) {
           await sendEmail({

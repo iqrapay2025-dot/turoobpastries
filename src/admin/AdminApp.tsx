@@ -295,6 +295,8 @@ export default function AdminApp() {
           recipientName: o.recipient_name ?? '',
           recipientPhone: o.recipient_phone ?? '',
           giftMessage: o.gift_message ?? '',
+                    customerCode: o.customers?.customer_code ?? '',
+          customerBlocked: !!o.customers?.is_blocked,
         } as unknown as AOrder & { id: string }
       })
       ordersRef.current = mapped

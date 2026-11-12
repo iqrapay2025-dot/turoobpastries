@@ -123,7 +123,7 @@ export async function adminBatchSummary(batchDate: string) {
 export async function fetchOrders(filters?: { status?: string; search?: string }) {
   let query = supabase
     .from('orders')
-    .select('*, order_items (*)')
+        .select('*, order_items (*), customers (customer_code, is_blocked)')
     .order('created_at', { ascending: false })
   if (filters?.status) query = query.eq('order_status', filters.status)
   if (filters?.search) {
@@ -140,6 +140,16 @@ export async function fetchOrders(filters?: { status?: string; search?: string }
   return data || []
 }
 
+// --- Admin: customers (admin read) and blocking ---
+export async function fetchCustomers() {
+  const { data, error } = await supabase.from('customers').select('id, customer_code, email, full_name, phone, is_blocked, blocked_reason').order('customer_code')
+  if (error) throw error
+  return data || []
+}
+export async function setCustomerBlocked(id: string, blocked: boolean, reason?: string) {
+  const { error } = await supabase.from('customers').update({ is_blocked: blocked, blocked_reason: blocked ? (reason || null) : null }).eq('id', id)
+  if (error) throw error
+}
 // --- Admin: live orders ---
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export function subscribeToOrders(callback: (payload: any) => void) {

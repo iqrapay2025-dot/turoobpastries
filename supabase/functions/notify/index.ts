@@ -25,7 +25,7 @@ Deno.serve(async (req) => {
     if (body.type === "order_received") {
       const { data: o } = await db
         .from("orders")
-        .select("*, order_items(*)")
+        .select("*, order_items(*), customers(customer_code)")
         .eq("public_token", body.public_token)
         .single();
       if (!o) return json({ error: "Order not found" }, 404);
@@ -52,7 +52,7 @@ Deno.serve(async (req) => {
 
       const { data: o } = await db
         .from("orders")
-        .select("*, order_items(*)")
+        .select("*, order_items(*), customers(customer_code)")
         .eq("id", body.order_id)
         .single();
       if (!o || o.fee_status !== "confirmed") {
@@ -73,7 +73,7 @@ Deno.serve(async (req) => {
 
       const { data: o } = await db
         .from("orders")
-        .select("*, order_items(*)")
+        .select("*, order_items(*), customers(customer_code)")
         .eq("id", body.order_id)
         .single();
       if (!o || o.fulfilment !== "pickup" || o.order_status !== "ready_for_pickup") {

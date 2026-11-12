@@ -137,6 +137,7 @@ function Drawer({ no, onClose }: { no: string; onClose: () => void }) {
             )}
             <h3 className="text-base font-semibold">{o.isGift ? 'Buyer' : 'Customer'}</h3>
             <p className="font-semibold">{o.name}</p>
+            {o.customerCode && <p className="text-xs font-bold uppercase tracking-wider text-ink/70">ID {o.customerCode}{o.customerBlocked && <span className="ml-2 rounded-full bg-red px-2 py-0.5 text-white">Blocked</span>}</p>}
             <Row icon={<Phone className="size-4" />}><a href={`tel:${o.phone}`} className="hover:underline">{o.phone}</a></Row>
             {waHref && (
               <a href={waHref} target="_blank" rel="noreferrer" className="flex min-h-11 items-center justify-center gap-2 rounded-full bg-ink px-4 text-sm font-semibold text-white hover:bg-ink-soft">

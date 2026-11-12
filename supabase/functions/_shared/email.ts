@@ -59,7 +59,7 @@ function summary(o: any, items: any[]) {
     o.fulfilment === "pickup"
       ? `Pickup at ${esc(Deno.env.get("PICKUP_LOCATION") ?? "Central Mosque, University of Ilorin")}`
       : `Delivery to ${esc(o.delivery_address)}${o.delivery_slot ? ` (${esc(o.delivery_slot)})` : ""}`;
-  return `<p><b>Order ${esc(o.order_number)}</b><br>${where}<br>Batch date: ${esc(o.batch_date)}</p>
+  return `<p><b>Order ${esc(o.order_number)}</b>${o.customers?.customer_code ? `<br>Customer ID: ${esc(o.customers.customer_code)}` : ""}<br>${where}<br>Batch date: ${esc(o.batch_date)}</p>
   ${itemsTable(items)}
   <p>Subtotal: ${naira(o.subtotal)}<br>Delivery: ${naira(o.delivery_fee)}<br><b>Total: ${naira(o.total)}</b></p>`;
 }

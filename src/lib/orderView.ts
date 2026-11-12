@@ -3,6 +3,7 @@
 export type OrderView = {
   order_number: string
   track_code: string
+  customer_code?: string | null
   customer_name: string
   customer_email: string
   fulfilment: 'pickup' | 'delivery'
