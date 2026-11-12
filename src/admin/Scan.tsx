@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import { Camera, CameraOff, CheckCircle2, Gift, MapPin, Phone, ScanLine, Store } from 'lucide-react'
+import { Camera, CameraOff, CheckCircle2, Gift, MapPin, Phone, ScanLine, Store, Trophy } from 'lucide-react'
 import { Button, Notice, cx } from '../components/ui'
 import { useApp } from '../store'
 import { useAdmin } from './adminContext'
@@ -179,9 +179,9 @@ export default function Scan() {
           </div>
 
           <div className="space-y-4 p-5">
-                        {(order.bonusPuffs ?? 0) > 0 && (
+            {(order.bonusPuffs ?? 0) > 0 && (
               <div className="rounded-2xl border-2 border-red bg-red-tint/60 p-3 text-sm">
-                <p className="font-bold">🎉 Won the game: add {order.bonusPuffs} FREE puff-puff</p>
+                <p className="flex items-center gap-2 font-bold"><Trophy className="size-4 text-red" />Won the game: add {order.bonusPuffs} FREE puff-puff</p>
                 <p className="mt-1 text-xs text-ink/70">Put one extra puff-puff in this order before handing it over.</p>
               </div>
             )}

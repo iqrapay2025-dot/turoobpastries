@@ -2,13 +2,41 @@ import t1 from '../assets/team-t1.jpg'
 import t2 from '../assets/team-t2.jpg'
 import t3 from '../assets/team-t3.jpg'
 import { useRef, useState, useEffect } from 'react'     
-import { ArrowRight, UtensilsCrossed, Truck, ShieldCheck, Cookie, MapPin, ChevronLeft, ChevronRight } from 'lucide-react'
+import { ArrowRight, UtensilsCrossed, Truck, ShieldCheck, Cookie, MapPin, ChevronLeft, ChevronRight, Gamepad2, Lightbulb, Puzzle, Calculator, LayoutGrid, Timer } from 'lucide-react'
 import { useApp } from '../store'
 import { fetchProducts, fetchReviews, fetchTeamMembers } from '../lib/supabase'
 import { Button, SectionTitle, Sparkle } from '../components/ui'
 import { BatchBanner, BatchPicker, ProductCard } from '../components/Blocks'
 import { FAQ, IMG } from '../data'
 import Loader from '../components/Loader'
+
+/* ---------------------------------------------------------------- Game announcement */
+function GameAnnouncement() {
+  const { go, anyOpen } = useApp()
+  return (
+    <section className="mx-auto max-w-6xl px-4 pt-6 sm:px-6">
+      <div className="relative overflow-hidden rounded-[28px] bg-red p-6 text-white shadow-pop sm:p-8">
+        <div className="grid items-center gap-6 md:grid-cols-[1fr_auto]">
+          <div>
+            <span className="inline-flex items-center gap-2 rounded-full bg-yellow px-3 py-1 text-xs font-bold uppercase tracking-wide text-ink"><Gamepad2 className="size-4" />New</span>
+            <h2 className="mt-3 font-display text-2xl font-semibold leading-tight sm:text-3xl">Play while we fry. Win a free puff-puff.</h2>
+            <p className="mt-2 max-w-xl text-white/90">After you pay, pick a game while your order is being prepared: riddles, puzzles, a math challenge or memory match. Beat the clock and we add one extra puff-puff to your order.</p>
+            <ul className="mt-4 flex flex-wrap gap-2 text-sm font-semibold">
+              {([[Lightbulb, 'Riddles'], [Puzzle, 'Puzzles'], [Calculator, 'Math'], [LayoutGrid, 'Memory match']] as const).map(([Icon, label]) => (
+                <li key={label} className="inline-flex items-center gap-1.5 rounded-full bg-white/15 px-3 py-1.5"><Icon className="size-4" />{label}</li>
+              ))}
+              <li className="inline-flex items-center gap-1.5 rounded-full bg-yellow px-3 py-1.5 text-ink"><Timer className="size-4" />Against the clock</li>
+            </ul>
+            <p className="mt-3 text-xs text-white/80">One try per paid order. Limited free puff-puffs each day.</p>
+          </div>
+          <div className="md:text-right">
+            <Button variant="yellow" size="lg" disabled={!anyOpen} onClick={() => go('#/order')}>{anyOpen ? 'Order and play' : 'Orders closed'}<ArrowRight className="size-5" /></Button>
+          </div>
+        </div>
+      </div>
+    </section>
+  )
+}
 
 /* ---------------------------------------------------------------- Hero */
 function Hero() {
@@ -230,6 +258,7 @@ export default function Home() {
     <main>
       <Hero />
       <div className="mx-auto max-w-6xl px-4 sm:px-6"><BatchBanner /></div>
+      <GameAnnouncement />
 
       <section className="mx-auto max-w-6xl px-4 py-16 sm:px-6">
         <SectionTitle eyebrow="How it works" title="Four steps to warm puff-puff" center />

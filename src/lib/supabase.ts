@@ -81,10 +81,10 @@ export async function setPickupSlot(token: string, slot: string) {
 export type GameKind = 'riddle' | 'puzzle' | 'math' | 'memory'
 export type GameStatus = { enabled: boolean; eligible?: boolean; prizes_left?: boolean; status?: 'none' | 'playing' | 'won' | 'lost'; kind?: GameKind | null; bonus_puffs?: number }
 export type GamePayload =
-  | { kind: 'riddle' | 'puzzle' | 'math'; questions: Array<{ question: string; options: string[] }> }
-  | { kind: 'memory'; size: number; max_moves: number; moves: number; matched: Array<{ idx: number; symbol: string }> }
-export type FlipResult = { symbol: string; phase: 'first' | 'second'; first?: number; match?: boolean; moves?: number; done?: boolean; won?: boolean; awarded?: boolean }
-export type SubmitResult = { won: boolean; correct: number; total: number; answers: string[]; awarded: boolean }
+  | { kind: 'riddle' | 'puzzle' | 'math'; seconds_left: number; questions: Array<{ question: string; options: string[] }> }
+  | { kind: 'memory'; seconds_left: number; size: number; max_moves: number; moves: number; matched: Array<{ idx: number; symbol: string }> }
+export type FlipResult = { symbol?: string; phase: 'first' | 'second'; first?: number; match?: boolean; moves?: number; done?: boolean; won?: boolean; awarded?: boolean; timed_out?: boolean }
+export type SubmitResult = { won: boolean; correct: number; total: number; answers: string[]; awarded: boolean; timed_out?: boolean }
 
 export async function gameStatus(token: string) {
   const { data, error } = await supabase.rpc('game_status', { p_token: token })
@@ -106,6 +106,7 @@ export async function gameFlip(token: string, idx: number) {
   if (error) throw error
   return data as FlipResult
 }
+
 // --- Get order by token ---
 export async function getOrderByToken(token: string) {
   const { data, error } = await supabase.rpc('get_order_by_token', { p_token: token })
@@ -152,7 +153,7 @@ export async function adminBatchSummary(batchDate: string) {
 export async function fetchOrders(filters?: { status?: string; search?: string }) {
   let query = supabase
     .from('orders')
-        .select('*, order_items (*), customers (customer_code, is_blocked)')
+    .select('*, order_items (*), customers (customer_code, is_blocked)')
     .order('created_at', { ascending: false })
   if (filters?.status) query = query.eq('order_status', filters.status)
   if (filters?.search) {
@@ -179,6 +180,7 @@ export async function setCustomerBlocked(id: string, blocked: boolean, reason?: 
   const { error } = await supabase.from('customers').update({ is_blocked: blocked, blocked_reason: blocked ? (reason || null) : null }).eq('id', id)
   if (error) throw error
 }
+
 // --- Admin: live orders ---
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export function subscribeToOrders(callback: (payload: any) => void) {
