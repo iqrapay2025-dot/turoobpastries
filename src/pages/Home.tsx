@@ -3,6 +3,8 @@ import t2 from '../assets/team-t2.jpg'
 import t3 from '../assets/team-t3.jpg'
 import jumah from '../assets/jumah muhammed.jpg'
 import abdulazeez from '../assets/abdulazeez adegbite.jpg'
+import ademola from '../assets/Ademola Khalif.jpg'
+import muhammadulawwal from '../assets/Muhammadulawwal Abdulsamod.jpg'
 import { useRef, useState, useEffect } from 'react'     
 import { ArrowRight, UtensilsCrossed, Truck, ShieldCheck, Cookie, MapPin, ChevronLeft, ChevronRight, Gamepad2, Lightbulb, Puzzle, Calculator, LayoutGrid, Timer } from 'lucide-react'
 import { useApp } from '../store'
@@ -180,8 +182,8 @@ const FALLBACK_REVIEWS: Review[] = [
 
 const FALLBACK_TEAM: TeamMember[] = [
   { name: 'AbdulAzeez Adegbite Ayomide', role: 'Founder and Head Fryer', img: abdulazeez },
-  { name: 'Ademola Khalif', role: 'Team member', img: 'https://images.unsplash.com/photo-1614023342667-6f060e9d1e04?w=600&q=80&fit=crop' },
-  { name: 'Muhammadulawwal Abdulsamod', role: 'Team member', img: 'https://images.unsplash.com/photo-1614023342667-6f060e9d1e04?w=600&q=80&fit=crop' },
+  { name: 'Ademola Khalif', role: 'Team member', img: ademola },
+  { name: 'Muhammadulawwal Abdulsamod', role: 'Team member', img: muhammadulawwal },
   { name: 'Jumah Muhammed O.', role: 'Team member', img: jumah },
   { name: 'Opatola Abass', role: 'Team member', img: 'https://images.unsplash.com/photo-1546525848-3ce03ca516f6?w=600&q=80&fit=crop' },
   { name: 'Yisau Shukroh', role: 'Team member', img: t1 },
