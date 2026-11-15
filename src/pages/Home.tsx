@@ -54,7 +54,7 @@ function Hero() {
         <div>
           <span className="mb-4 inline-flex items-center gap-2 rounded-full bg-yellow px-4 py-1.5 text-sm font-bold"><Cookie className="size-4" />Made by Unilorin students</span>
           <h1 className="text-[44px] font-semibold leading-[1.02] sm:text-6xl lg:text-7xl">Hot, fresh <span className="text-red">puff-puff.</span> Friday, Saturday and Sunday.</h1>
-          <p className="mt-5 max-w-lg text-lg text-ink-soft">Order for Friday, Saturday or Sunday, then pick up at Central Mosque or have it delivered across campus and off-campus, golden, fluffy and still warm.</p>
+          <p className="mt-5 max-w-lg text-lg text-ink-soft">Order for Friday, Saturday or Sunday, then pick up at Central Mosque or have it delivered to the University of Ilorin (PS), off-campus or the College of Health Sciences, golden, fluffy and still warm.</p>
           <div className="mt-7 flex flex-wrap items-center gap-3">
             <Button size="lg" disabled={closed} onClick={() => go('#/order')}>{closed ? 'Orders closed' : 'Pre-order now'}<ArrowRight className="size-5" /></Button>
             <Button size="lg" variant="secondary" onClick={() => go('#/status')}>Track my order</Button>
@@ -316,7 +316,7 @@ export default function Home() {
 
       <section className="mx-auto max-w-6xl px-4 py-16 sm:px-6">
         <div className="grid gap-4 rounded-[28px] bg-red p-6 text-white shadow-pop sm:p-8 md:grid-cols-3">
-          {[['Pickup', 'Free', 'Central Mosque, University of Ilorin'], ['On-campus delivery', 'from ₦100', 'To your hostel, faculty or office'], ['Off-campus delivery', 'from ₦200', 'Final fee confirmed before payment']].map(([t, p, d]) => (
+          {[['Pickup', 'Free', 'Central Mosque, University of Ilorin'], ['On-campus delivery (PS)', 'from ₦100', 'University of Ilorin and the College of Health Sciences: hostel, faculty or office'], ['Off-campus delivery', 'from ₦200', 'Final fee confirmed before payment']].map(([t, p, d]) => (
             <div key={t} className="flex items-start gap-4 rounded-2xl bg-white/10 p-5 transition duration-300 hover:-translate-y-1 hover:bg-white/20">
               <MapPin className="mt-1 size-6 shrink-0 text-yellow" />
               <div><p className="text-sm font-semibold text-white">{t}</p><p className="font-display text-3xl font-semibold">{p}</p><p className="mt-1 text-sm text-white">{d}</p></div>

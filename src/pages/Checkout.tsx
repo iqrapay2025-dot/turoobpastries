@@ -230,14 +230,14 @@ export default function Checkout() {
             ) : (
               <div className="pop-in mt-5 space-y-5">
                 <div className="grid gap-3 sm:grid-cols-2" role="radiogroup">
-                  {([['on', 'On-campus', onFee], ['off', 'Off-campus', offFee]] as const).map(([k, l, p]) => (
+                  {([['on', 'On-campus (PS)', onFee], ['off', 'Off-campus', offFee]] as const).map(([k, l, p]) => (
                     <button key={k} role="radio" aria-checked={zone === k} onClick={() => setZone(k)} className={cx('flex items-center justify-between rounded-2xl border-2 p-4 text-left transition', zone === k ? 'border-red bg-red-tint/50' : 'border-yellow-light hover:border-yellow')}>
                       <span className="flex items-center gap-3"><span className={cx('grid size-5 place-items-center rounded-full border-2', zone === k ? 'border-red' : 'border-ink/30')}>{zone === k && <span className="size-2.5 rounded-full bg-red" />}</span><b>{l}</b></span>
                       <span className="font-display text-lg font-semibold text-red">{naira(p)}</span>
                     </button>
                   ))}
                 </div>
-                <Field label={gift ? 'Recipient’s delivery address or location' : 'Delivery address or location'} value={f.address} onChange={set('address')} error={show('address')} valid={!err.address && !!f.address} onBlur={blur('address')} placeholder="e.g. Hall 3, Room 214, Unilorin" />
+                <Field label={gift ? 'Recipient’s delivery address or location' : 'Delivery address or location'} value={f.address} onChange={set('address')} error={show('address')} valid={!err.address && !!f.address} onBlur={blur('address')} placeholder="e.g. Hall 3, Room 214, Unilorin, or College of Health Sciences" />
                 <Field label="Landmark" optional value={f.landmark} onChange={set('landmark')} placeholder="e.g. Opposite the faculty gate" />
                 <div>
                   <p className="mb-2 text-sm font-semibold">Preferred time slot</p>
