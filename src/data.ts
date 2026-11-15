@@ -5,11 +5,16 @@ import jumah from './assets/jumah muhammed.jpg'
 import abdulazeez from './assets/abdulazeez adegbite.jpg'
 import ademola from './assets/Ademola Khalif.jpg'
 import muhammadulawwal from './assets/Muhammadulawwal Abdulsamod.jpg'
+import opatola from './assets/Opatola Abbas.jpg'
+import pepperedImg from './assets/peppered puffpuff.jpg'
+import zoboImg from './assets/bliss blend zobo 1.jpg'
+import tigernutImg from './assets/bliss blend tigernut 1.jpg'
 export const IMG = {
   hero: 'https://images.unsplash.com/photo-1767324672458-7dec3a2acffa?w=1000&q=80&fit=crop',
-  pepper: 'https://images.unsplash.com/photo-1665833613236-7c1d087463b1?w=800&q=80&fit=crop',
+    pepper: pepperedImg,
   plain: 'https://images.unsplash.com/photo-1667506999146-805370d013f4?w=800&q=80&fit=crop',
-  zobo: 'https://images.unsplash.com/photo-1506802913710-40e2e66339c9?w=800&q=80&fit=crop',
+  zobo: zoboImg,
+  tigernut: tigernutImg,
   bowl: 'https://images.unsplash.com/photo-1664993085274-80c6ba725ccc?w=800&q=80&fit=crop',
   saturday: 'https://images.unsplash.com/photo-1525359013742-5791b1548d90?w=800&q=80&fit=crop',
 }
@@ -66,7 +71,7 @@ export const TEAM = [
   { name: 'Yisau Shukroh', role: 'Team member', img: t1 },
   { name: 'Fatimah Salahudeen', role: 'Team member', img: t2 },
   { name: 'Masruroh Fasasi', role: 'Team member', img: t3 },
-  { name: 'Opatola Abass', role: 'Team member', img: 'https://images.unsplash.com/photo-1546525848-3ce03ca516f6?w=600&q=80&fit=crop' },
+    { name: 'Opatola Abass', role: 'Team member', img: opatola },
 ]
 
 export const REVIEWS = [

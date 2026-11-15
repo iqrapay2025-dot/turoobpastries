@@ -55,7 +55,7 @@ function BatchSummary() {
   // Only the coming batch for the selected day, never older weeks.
   const date = nextBatchDate(b)
   const list = orders.filter((o) => o.batch === b && live(o) && o.batchDate === date)
-  const sum = (k: 'pepper' | 'plain' | 'zobo') => list.reduce((a, o) => a + o[k], 0)
+    const sum = (k: 'pepper' | 'plain' | 'zobo' | 'tigernut') => list.reduce((a, o) => a + o[k], 0)
   const pieces = sum('pepper') + sum('plain')
   const revenue = list.filter((o) => o.paid).reduce((a, o) => a + total(o, settings.zoboPrice, settings.puffPrice), 0)
   const full = settings.maxOn && pieces >= settings.max
@@ -71,10 +71,10 @@ function BatchSummary() {
         <Stat icon={<Flame className="size-4 text-red" />} label="With pepper" value={sum('pepper')} />
         <Stat icon={<Droplets className="size-4 text-red-dark" />} label="Without pepper" value={sum('plain')} />
         <Stat icon={<GlassWater className="size-4 text-red" />} label="Zobo bottles" value={sum('zobo')} />
+                <Stat icon={<GlassWater className="size-4 text-red-dark" />} label="Tigernut bottles" value={sum('tigernut')} />
         <Stat icon={<span className="font-bold text-red">₦</span>} label="Paid revenue" value={naira(revenue)} />
         <Stat icon={<span className="font-bold text-red">#</span>} label="Orders" value={list.length} />
-        <Stat icon={<Store className="size-4 text-red" />} label="Pickups" value={list.filter((o) => o.mode === 'pickup').length} />
-        <Stat icon={<Bike className="size-4 text-red" />} label="Deliveries" value={list.filter((o) => o.mode === 'delivery').length} />
+                <Stat icon={<Store className="size-4 text-red" />} label="Pickups / deliveries" value={`${list.filter((o) => o.mode === 'pickup').length} / ${list.filter((o) => o.mode === 'delivery').length}`} />
       </div>
       {settings.maxOn && (
         <div className="mt-5">
@@ -154,12 +154,13 @@ function Drawer({ no, onClose }: { no: string; onClose: () => void }) {
             {o.notes && <p className="rounded-2xl bg-yellow-light/60 p-3 text-sm"><b>Note:</b> {o.notes}</p>}
           </section>
 
-          <section>
+                    <section>
             <h3 className="mb-2 text-base font-semibold">Items</h3>
             <ul className="divide-y divide-ink/10 text-sm">
               {o.pepper > 0 && <li className="flex justify-between py-2"><span>{o.pepper}× Puff-Puff (With Pepper)</span><b>{naira(o.pepper * pp)}</b></li>}
               {o.plain > 0 && <li className="flex justify-between py-2"><span>{o.plain}× Puff-Puff (Without Pepper)</span><b>{naira(o.plain * pp)}</b></li>}
               {o.zobo > 0 && <li className="flex justify-between py-2"><span>{o.zobo}× Zobo (Bliss Blend)</span><b>{naira(o.zobo * settings.zoboPrice)}</b></li>}
+              {o.tigernut > 0 && <li className="flex justify-between py-2"><span>{o.tigernut}× Tigernut (Bliss Blend)</span><b>{naira(o.tigernut * settings.zoboPrice)}</b></li>}
             </ul>
             <dl className="mt-2 space-y-1 border-t border-dashed border-ink/20 pt-3 text-sm">
               <div className="flex justify-between"><dt>Subtotal</dt><dd>{naira(sub(o, settings.zoboPrice, pp))}</dd></div>
@@ -267,7 +268,7 @@ export default function Orders() {
                   <tr key={o.no} tabIndex={0} onClick={() => view(o)} onKeyDown={(e) => e.key === 'Enter' && view(o)} className="cursor-pointer transition hover:bg-yellow-light/30 focus-visible:bg-yellow-light/40">
                     <td className="px-4 py-3.5 font-bold">{isNew(o) && <span className="mr-2 inline-block size-2 animate-pulse rounded-full bg-red align-middle" />}{o.no}<span className="block text-xs font-normal text-ink/70">{placedText(o.placed)}</span></td>
                     <td className="px-4 py-3.5"><b className="font-semibold">{o.name}</b><span className="block text-xs text-ink/70">{o.phone}</span><GiftTag o={o} /></td>
-                    <td className="px-4 py-3.5 text-ink-soft">{items(o)} items<span className="block text-xs text-ink/70">{[o.pepper && `${o.pepper} pepper`, o.plain && `${o.plain} plain`, o.zobo && `${o.zobo} zobo`].filter(Boolean).join(', ')}</span></td>
+                    <td className="px-4 py-3.5 text-ink-soft">{items(o)} items<span className="block text-xs text-ink/70">{[o.pepper && `${o.pepper} pepper`, o.plain && `${o.plain} plain`, o.zobo && `${o.zobo} zobo`, o.tigernut && `${o.tigernut} tigernut`].filter(Boolean).join(', ')}</span></td>
                     <td className="px-4 py-3.5">{o.mode === 'pickup' ? 'Pickup' : <>Delivery<span className="block max-w-42.5 truncate text-xs text-ink/70">{o.address}</span></>}</td>
                     <td className="px-4 py-3.5">{o.slot}</td>
                     <td className="px-4 py-3.5 font-bold">{naira(tot(o))}</td>

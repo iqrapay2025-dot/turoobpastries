@@ -5,7 +5,7 @@ export type Stage = 'new' | 'awaiting' | 'paid' | 'preparing' | 'out' | 'complet
 export type AOrder = {
   id?: string // database id, set by AdminApp when loading orders
   no: string; name: string; phone: string; email: string
-  pepper: number; plain: number; zobo: number
+    pepper: number; plain: number; zobo: number; tigernut: number
   mode: 'pickup' | 'delivery'; zone: 'on' | 'off'; address: string; slot: string
   fee: number; feeFinal: boolean; linkSent: boolean; paid: boolean; stage: Stage
   batch: BatchId; placed: string; notes: string
@@ -70,12 +70,12 @@ export const DEFAULTS: Settings = {
   puffPrice: PUFF_PRICE,
 }
 
-export const items = (x: AOrder) => x.pepper + x.plain + x.zobo
+export const items = (x: AOrder) => x.pepper + x.plain + x.zobo + x.tigernut
 
 export const sub = (x: AOrder, zoboPrice: number, puffPrice: number = PUFF_PRICE) =>
   x.dbTotal !== undefined
     ? x.dbTotal - (x.mode === 'pickup' ? 0 : x.fee)
-    : (x.pepper + x.plain) * puffPrice + x.zobo * zoboPrice
+        : (x.pepper + x.plain) * puffPrice + (x.zobo + x.tigernut) * zoboPrice
 
 /** Pickup orders never carry a delivery fee. */
 export const total = (x: AOrder, zoboPrice: number, puffPrice: number = PUFF_PRICE) =>

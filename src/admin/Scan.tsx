@@ -207,6 +207,7 @@ export default function Scan() {
               {order.pepper > 0 && <li className="flex justify-between py-2"><span>{order.pepper}× Puff-Puff (With Pepper)</span></li>}
               {order.plain > 0 && <li className="flex justify-between py-2"><span>{order.plain}× Puff-Puff (Without Pepper)</span></li>}
               {order.zobo > 0 && <li className="flex justify-between py-2"><span>{order.zobo}× Zobo</span></li>}
+              {order.tigernut > 0 && <li className="flex justify-between py-2"><span>{order.tigernut}× Tigernut</span></li>}
               <li className="flex justify-between py-2 font-semibold"><span>Total</span><span>{naira(order.dbTotal ?? 0)}</span></li>
             </ul>
             {order.notes && <p className="rounded-2xl bg-yellow-light/60 p-3 text-sm"><b>Note:</b> {order.notes}</p>}

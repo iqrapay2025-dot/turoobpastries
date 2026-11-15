@@ -52,6 +52,7 @@ export default function OverallStats() {
       average: paid.length ? Math.round(collected / paid.length) : 0,
       puffs: live.reduce((a, o) => a + o.pepper + o.plain, 0),
       zobo: live.reduce((a, o) => a + o.zobo, 0),
+            tigernut: live.reduce((a, o) => a + o.tigernut, 0),
       pickups: live.filter((o) => o.mode === 'pickup').length,
       deliveries: live.filter((o) => o.mode === 'delivery').length,
     }
@@ -74,7 +75,7 @@ export default function OverallStats() {
         <Stat label="Total order value" value={naira(s.collected + s.awaiting)} hint="Paid plus unpaid" />
         <Stat label="Average paid order" value={naira(s.average)} />
         <Stat label="Puff-puff ordered" value={String(s.puffs)} hint="pieces" />
-        <Stat label="Zobo ordered" value={String(s.zobo)} hint="bottles" />
+                <Stat label="Drinks ordered" value={String(s.zobo + s.tigernut)} hint={`${s.zobo} zobo, ${s.tigernut} tigernut`} />
         <Stat label="Pickup / delivery" value={`${s.pickups} / ${s.deliveries}`} />
       </div>
     </section>

@@ -78,9 +78,9 @@ export default function SettingsPage() {
         ))}
       </Block>
 
-      <Block title="Menu and capacity" desc="Zobo availability and portion limits.">
-        <Row label="Zobo available" hint="Partner: Bliss Blend. Shown only when on."><Toggle on={d.zobo} onChange={(v) => up({ zobo: v })} label="Zobo available" /></Row>
-        <Row label="Zobo prices" hint="Small and large sizes. Change these in the Supabase products table for now.">
+            <Block title="Menu and capacity" desc="Drink availability and portion limits.">
+        <Row label="Drinks available" hint="Zobo and Tigernut, partner: Bliss Blend. Shown only when on."><Toggle on={d.zobo} onChange={(v) => up({ zobo: v })} label="Drinks available" /></Row>
+        <Row label="Drink prices" hint="Change these in the Supabase products table for now.">
           <span className="text-sm font-semibold text-ink/70">Not editable here</span>
         </Row>
         <Row label="Max portions per batch" hint={d.maxOn ? 'Shows "Sold out" when reached. Applies to every batch day.' : 'No limit'}>

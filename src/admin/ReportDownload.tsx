@@ -39,10 +39,10 @@ export default function ReportDownload() {
   const collected = sum(paid)
 
   const download = () => {
-    const head = ['Order no', 'Placed', 'Customer', 'Phone', 'Batch', 'Type', 'Pepper', 'Plain', 'Zobo', 'Delivery fee', 'Total', 'Payment', 'Status']
+    const head = ['Order no', 'Placed', 'Customer', 'Phone', 'Batch', 'Type', 'Pepper', 'Plain', 'Zobo', 'Tigernut', 'Delivery fee', 'Total', 'Payment', 'Status']
     const lines = rows.map((o) => [
       o.no, new Date(o.placed).toLocaleString('en-NG'), o.name, o.phone, dayOf(o), o.mode,
-      o.pepper, o.plain, o.zobo, o.mode === 'delivery' ? o.fee : 0, amount(o), o.paid ? 'Paid' : 'Unpaid', o.stage,
+            o.pepper, o.plain, o.zobo, o.tigernut, o.mode === 'delivery' ? o.fee : 0, amount(o), o.paid ? 'Paid' : 'Unpaid', o.stage,
     ])
     const csv = [head, ...lines].map((r) => r.map(cell).join(',')).join('\r\n')
     const blob = new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8' })
@@ -64,6 +64,7 @@ export default function ReportDownload() {
       ['Average paid order', naira(paid.length ? Math.round(collected / paid.length) : 0)],
       ['Puff-puff ordered', `${live.reduce((a, o) => a + o.pepper + o.plain, 0)} pieces`],
       ['Zobo ordered', `${live.reduce((a, o) => a + o.zobo, 0)} bottles`],
+            ['Tigernut ordered', `${live.reduce((a, o) => a + o.tigernut, 0)} bottles`],
       ['Pickups / deliveries', `${live.filter((o) => o.mode === 'pickup').length} / ${live.filter((o) => o.mode === 'delivery').length}`],
       ['Cancelled', String(rows.length - live.length)],
     ]

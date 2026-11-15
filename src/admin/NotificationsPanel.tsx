@@ -16,7 +16,7 @@ const ago = (iso: string) => {
 }
 
 const summary = (o: AOrder) =>
-  [o.pepper && `${o.pepper} pepper`, o.plain && `${o.plain} plain`, o.zobo && `${o.zobo} zobo`].filter(Boolean).join(', ')
+  [o.pepper && `${o.pepper} pepper`, o.plain && `${o.plain} plain`, o.zobo && `${o.zobo} zobo`, o.tigernut && `${o.tigernut} tigernut`].filter(Boolean).join(', ')
 
 function OrderRow({ o, onOpen }: { o: AOrder; onOpen: (no: string) => void }) {
   const { settings, setStage, confirmFee } = useAdmin()

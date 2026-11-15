@@ -13,6 +13,8 @@ import { Button, SectionTitle, Sparkle } from '../components/ui'
 import { BatchBanner, BatchPicker, ProductCard } from '../components/Blocks'
 import { FAQ, IMG } from '../data'
 import Loader from '../components/Loader'
+import opatola from '../assets/Opatola Abbas.jpg'
+import puffVideo from '../assets/puffpuff video 1.mp4'
 
 /* ---------------------------------------------------------------- Game announcement */
 function GameAnnouncement() {
@@ -75,7 +77,7 @@ function Hero() {
 
 /* --------------------------------------------------------------- Steps */
 const STEPS = [
-  [UtensilsCrossed, 'Choose your puff-puff', 'With or without pepper. Add Zobo when it is in.'],
+    [UtensilsCrossed, 'Choose your puff-puff', 'With or without pepper. Add Zobo or Tigernut when they are in.'],
   [Truck, 'Pick pickup or delivery', 'Collect at Central Mosque or get it brought to you.'],
   [ShieldCheck, 'Pay securely', 'Card, bank transfer, USSD or OPay via Paystack.'],
   [Cookie, 'Enjoy it hot', 'Fried fresh after Jumah, handed over still warm.'],
@@ -185,7 +187,7 @@ const FALLBACK_TEAM: TeamMember[] = [
   { name: 'Ademola Khalif', role: 'Team member', img: ademola },
   { name: 'Muhammadulawwal Abdulsamod', role: 'Team member', img: muhammadulawwal },
   { name: 'Jumah Muhammed O.', role: 'Team member', img: jumah },
-  { name: 'Opatola Abass', role: 'Team member', img: 'https://images.unsplash.com/photo-1546525848-3ce03ca516f6?w=600&q=80&fit=crop' },
+    { name: 'Opatola Abass', role: 'Team member', img: opatola },
   { name: 'Yisau Shukroh', role: 'Team member', img: t1 },
   { name: 'Fatimah Salahudeen', role: 'Team member', img: t2 },
   { name: 'Masruroh Fasasi', role: 'Team member', img: t3 },
@@ -196,12 +198,13 @@ const FALLBACK_TEAM: TeamMember[] = [
 const toProduct = (p: any) => {
   const name: string = p.name ?? ''
   const lower = name.toLowerCase()
-  const fallbackImg = lower.includes('zobo') ? IMG.zobo : lower.includes('without') ? IMG.plain : IMG.pepper
+  const isDrink = lower.includes('zobo') || lower.includes('tigernut')
+  const fallbackImg = lower.includes('tigernut') ? IMG.tigernut : lower.includes('zobo') ? IMG.zobo : lower.includes('without') ? IMG.plain : IMG.pepper
   return {
     ...p,
     desc: p.desc ?? p.description ?? '',
     img: p.img ?? p.image_url ?? fallbackImg,
-    unit: p.unit ?? (lower.includes('zobo') ? 'bottle' : 'piece'),
+        unit: p.unit ?? (isDrink ? 'bottle' : 'piece'),
     partner: p.partner ?? p.partner_name ?? undefined,
   }
 }
@@ -280,7 +283,7 @@ export default function Home() {
 
       <section className="bg-yellow-light/50 py-16">
         <div className="mx-auto max-w-6xl px-4 sm:px-6">
-          <SectionTitle eyebrow="The menu" title="Fresh from the fryer" sub="Simple, honest and golden. Add Zobo to your order when it is in season." />
+          <SectionTitle eyebrow="The menu" title="Fresh from the fryer" sub="Simple, honest and golden. Add a Bliss Blend drink to your order when it is in season." />
           {productsError ? (
             <p className="rounded-2xl bg-white p-6 text-center font-semibold text-red-dark shadow-soft">
               Couldn’t load the menu. Please refresh the page.
@@ -292,6 +295,22 @@ export default function Home() {
               {products.map((p) => <ProductCard key={p.id} p={p} preview />)}
             </div>
           )}
+        </div>
+      </section>
+            <section className="mx-auto max-w-6xl px-4 pt-16 sm:px-6">
+        <SectionTitle eyebrow="Watch" title="Hot out of the fryer" sub="A peek at how every batch is made." />
+        <div className="mx-auto max-w-sm overflow-hidden rounded-[28px] bg-ink shadow-pop sm:max-w-md">
+          <video
+            src={puffVideo}
+            className="block max-h-[80vh] w-full bg-ink object-contain"
+            autoPlay
+            muted
+            loop
+            playsInline
+            controls
+            preload="metadata"
+            aria-label="Puff-puff being fried fresh"
+          />
         </div>
       </section>
 

@@ -206,7 +206,7 @@ export default function AdminApp() {
       const row = (k: BatchKey) => days.find((d) => d.day_of_week === DOW[k])
       const hhmm = (t: string | undefined, fallback: string) => (t ? String(t).slice(0, 5) : fallback)
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const zobos = (pr.data ?? []).filter((p: any) => /zobo/i.test(p.name))
+      const zobos = (pr.data ?? []).filter((p: any) => /zobo|tigernut/i.test(p.name))
       const maxes = days.map((d) => d.max_portions).filter((m) => m !== null && m !== undefined)
 
       setSettings({
@@ -275,6 +275,7 @@ export default function AdminApp() {
           pepper: qty((n) => n.includes('pepper') && !n.includes('without')),
           plain: qty((n) => n.includes('without')),
           zobo: qty((n) => n.includes('zobo')),
+          tigernut: qty((n) => n.includes('tigernut')),
           mode: o.fulfilment,
           zone: o.zone === 'off_campus' ? 'off' : 'on',
           address: o.delivery_address ?? '',
@@ -435,7 +436,7 @@ export default function AdminApp() {
       const pr = await supabase.from('products').select('id,name')
       if (pr.error) throw pr.error
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const zobos = (pr.data ?? []).filter((p: any) => /zobo/i.test(p.name))
+      const zobos = (pr.data ?? []).filter((p: any) => /zobo|tigernut/i.test(p.name))
       for (const p of zobos) {
         const patch: Record<string, unknown> = { is_available: s.zobo }
         if (zobos.length === 1) patch.price = s.zoboPrice
