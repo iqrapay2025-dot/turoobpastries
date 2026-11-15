@@ -23,7 +23,21 @@ const messageOf = (e: unknown) =>
       ? String((e as { message: unknown }).message)
       : 'Order placement failed. Please try again.'
 
-export default function Checkout() {
+// Where we deliver. The group decides the fee (on-campus or off-campus price).
+// To add or remove a place, just edit the lists below.
+const AREAS: { group: string; zone: 'on' | 'off'; places: string[] }[] = [
+  {
+    group: 'On-campus',
+    zone: 'on',
+    places: ['On-campus (PS)', 'On-campus (PS), Quarters', 'College of Health Sciences, Old College', 'College of Health Sciences, New College'],
+  },
+  {
+    group: 'Off-campus',
+    zone: 'off',
+    places: ['Schoolgate', 'Oke-Odo', 'Chapel', 'Oko-Oba', 'MFM Junction', 'Sanrab', 'Tipper Garage', 'Tanke Terminus', 'Other off-campus area'],
+  },
+]
+      export default function Checkout() {
     const {
     cart, subtotal, go, setOrder, clear, toast, closed, order, batch,
     products, productsLoading, productsError, settings, slots, currentBatch,
@@ -36,7 +50,7 @@ export default function Checkout() {
   const [gift, setGift] = useState(false)
   const [g, setG] = useState({ name: '', phone: '', message: '' })
   const [mode, setMode] = useState<Fulfilment>('pickup')
-  const [zone, setZone] = useState<'on' | 'off'>('on')
+  const [area, setArea] = useState(AREAS[0].places[0])
   const [slot, setSlot] = useState('')
   const [touched, setTouched] = useState(false)
   const [seen, setSeen] = useState<Record<string, boolean>>({})
@@ -57,6 +71,7 @@ export default function Checkout() {
   const onFee = Number(settings?.on_campus_fee ?? 100)
   const offFee = Number(settings?.off_campus_fee ?? 200)
   const pickupPlace = settings?.pickup_location ?? 'Central Mosque, University of Ilorin'
+    const zone: 'on' | 'off' = AREAS.find((g) => g.places.includes(area))?.zone ?? 'on'
   const fee = mode === 'delivery' ? (zone === 'on' ? onFee : offFee) : 0
 
   // Time slots for the selected batch day only.
@@ -104,7 +119,7 @@ export default function Checkout() {
         batch_day_id: currentBatch.batch_day_id,
         fulfilment: mode,
         zone: mode === 'delivery' ? (zone === 'on' ? 'on_campus' : 'off_campus') : undefined,
-        delivery_address: mode === 'delivery' ? f.address.trim() : undefined,
+        delivery_address: mode === 'delivery' ? `${area}: ${f.address.trim()}` : undefined,
         landmark: mode === 'delivery' ? f.landmark.trim() || undefined : undefined,
         delivery_slot: mode === 'delivery' ? chosenSlot || undefined : undefined,
         notes: orderNotes || undefined,
@@ -140,7 +155,7 @@ export default function Checkout() {
         items,
         mode,
         zone,
-        address: f.address.trim(),
+                address: mode === 'delivery' ? `${area}: ${f.address.trim()}` : f.address.trim(),
         landmark: f.landmark.trim(),
         slot: chosenSlot,
         notes: f.notes.trim(),
@@ -229,15 +244,18 @@ export default function Checkout() {
               </div>
             ) : (
               <div className="pop-in mt-5 space-y-5">
-                <div className="grid gap-3 sm:grid-cols-2" role="radiogroup">
-                  {([['on', 'On-campus (PS)', onFee], ['off', 'Off-campus', offFee]] as const).map(([k, l, p]) => (
-                    <button key={k} role="radio" aria-checked={zone === k} onClick={() => setZone(k)} className={cx('flex items-center justify-between rounded-2xl border-2 p-4 text-left transition', zone === k ? 'border-red bg-red-tint/50' : 'border-yellow-light hover:border-yellow')}>
-                      <span className="flex items-center gap-3"><span className={cx('grid size-5 place-items-center rounded-full border-2', zone === k ? 'border-red' : 'border-ink/30')}>{zone === k && <span className="size-2.5 rounded-full bg-red" />}</span><b>{l}</b></span>
-                      <span className="font-display text-lg font-semibold text-red">{naira(p)}</span>
-                    </button>
-                  ))}
+                                <div>
+                  <label htmlFor="area" className="block text-sm font-semibold">{gift ? 'Where should we deliver the gift?' : 'Where should we deliver?'}</label>
+                  <select id="area" value={area} onChange={(e) => setArea(e.target.value)} className="mt-1.5 h-12 w-full rounded-2xl border-2 border-yellow-light bg-white px-4 font-semibold outline-none focus:border-yellow-dark focus:ring-4 focus:ring-yellow/30">
+                    {AREAS.map((g) => (
+                      <optgroup key={g.group} label={`${g.group} (${naira(g.zone === 'on' ? onFee : offFee)})`}>
+                        {g.places.map((p) => <option key={p} value={p}>{p}</option>)}
+                      </optgroup>
+                    ))}
+                  </select>
+                  <p className="mt-1.5 text-sm text-ink-soft">Delivery fee: <b className="text-red">{naira(fee)}</b>{zone === 'off' ? '. The final fee is confirmed before you pay.' : ''}</p>
                 </div>
-                <Field label={gift ? 'Recipient’s delivery address or location' : 'Delivery address or location'} value={f.address} onChange={set('address')} error={show('address')} valid={!err.address && !!f.address} onBlur={blur('address')} placeholder="e.g. Hall 3, Room 214, Unilorin, or College of Health Sciences" />
+                <Field label={gift ? 'Recipient’s delivery address or location' : 'Delivery address or location'} value={f.address} onChange={set('address')} error={show('address')} valid={!err.address && !!f.address} onBlur={blur('address')} placeholder="e.g. Hall 3, Room 214, or your street and house number" />
                 <Field label="Landmark" optional value={f.landmark} onChange={set('landmark')} placeholder="e.g. Opposite the faculty gate" />
                 <div>
                   <p className="mb-2 text-sm font-semibold">Preferred time slot</p>
