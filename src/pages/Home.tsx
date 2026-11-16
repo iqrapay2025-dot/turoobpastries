@@ -189,13 +189,13 @@ const FALLBACK_REVIEWS: Review[] = [
 
 const FALLBACK_TEAM: TeamMember[] = [
   { name: 'AbdulAzeez Adegbite Ayomide', role: 'Founder and Head Fryer', img: abdulazeez },
-  { name: 'Ademola Khalif', role: 'Team member', img: ademola },
-  { name: 'Muhammadulawwal Abdulsamod', role: 'Team member', img: muhammadulawwal },
-  { name: 'Jumah Muhammed O.', role: 'Team member', img: jumah },
-    { name: 'Opatola Abass', role: 'Team member', img: opatola },
-  { name: 'Yisau Shukroh', role: 'Team member', img: t1 },
-  { name: 'Fatimah Salahudeen', role: 'Team member', img: t2 },
-  { name: 'Masruroh Fasasi', role: 'Team member', img: t3 },
+  { name: 'Ademola Khalif', role: 'Opeartions Maanager', img: ademola },
+  { name: 'Muhammadulawwal Abdulsamod', role: 'Inventory & Production Coordinator', img: muhammadulawwal },
+  { name: 'Jumah Muhammed O.', role: 'Digital Communications & Tech Lead', img: jumah },
+    { name: 'Opatola Abass', role: 'Customer Relations & Logistics Officer', img: opatola },
+  { name: 'Yisau Shukroh', role: 'Packaging & Distribution Associate', img: t1 },
+  { name: 'Fatimah Salahudeen', role: 'Production & Packaging Associate', img: t2 },
+  { name: 'Masruroh Fasasi', role: 'Packaging & Presentation Associate', img: t3 },
 ]
 
 /* Supabase rows use slightly different field names than the UI, so map them. */
