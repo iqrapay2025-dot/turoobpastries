@@ -205,6 +205,48 @@ export async function fetchReviews() {
   return data || []
 }
 
+// --- Customer: leave a review for a paid order (checked in the database by tracking code + phone) ---
+export type ReviewError = 'invalid_rating' | 'invalid_comment' | 'not_found' | 'not_paid' | 'not_allowed' | 'already_reviewed'
+export async function submitReview(code: string, phone: string, rating: number, comment: string) {
+  const { data, error } = await supabase.rpc('submit_review', { p_code: code, p_phone: phone, p_rating: rating, p_comment: comment })
+  if (error) throw error
+  return data as { ok: true } | { ok: false; error: ReviewError }
+}
+export type OrderReview = { rating: number; comment: string; is_published: boolean } | null
+export async function getOrderReview(code: string, phone: string) {
+  const { data, error } = await supabase.rpc('get_order_review', { p_code: code, p_phone: phone })
+  if (error) throw error
+  return data as OrderReview
+}
+
+// --- Admin: all reviews, approve / hide / delete ---
+export type AdminReview = {
+  id: string
+  author_name: string
+  rating: number
+  comment: string
+  is_published: boolean
+  is_verified: boolean
+  created_at: string
+  orders: { order_number: string } | null
+}
+export async function fetchAllReviews() {
+  const { data, error } = await supabase
+    .from('reviews')
+    .select('id, author_name, rating, comment, is_published, is_verified, created_at, orders (order_number)')
+    .order('created_at', { ascending: false })
+  if (error) throw error
+  return (data || []) as unknown as AdminReview[]
+}
+export async function setReviewPublished(id: string, published: boolean) {
+  const { error } = await supabase.from('reviews').update({ is_published: published }).eq('id', id)
+  if (error) throw error
+}
+export async function deleteReview(id: string) {
+  const { error } = await supabase.from('reviews').delete().eq('id', id)
+  if (error) throw error
+}
+
 // --- Team members (active only) ---
 export async function fetchTeamMembers() {
   const { data, error } = await supabase

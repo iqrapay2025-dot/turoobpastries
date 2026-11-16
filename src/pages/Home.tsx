@@ -234,7 +234,7 @@ export default function Home() {
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         setReviews(r.value.map((x: any) => ({
           name: x.name ?? x.author_name ?? 'Customer',
-          where: x.where ?? '',
+          where: x.where ?? (x.is_verified ? 'Verified order' : ''),
           rating: x.rating ?? 5,
           text: x.text ?? x.comment ?? '',
         })))

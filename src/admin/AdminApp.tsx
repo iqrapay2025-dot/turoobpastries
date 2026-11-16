@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
-import { ClipboardList, Settings as Cog, Users, LogOut, Bell, ExternalLink, Eye, EyeOff, AlertCircle, ScanLine, MonitorPlay } from 'lucide-react'
+import { ClipboardList, Settings as Cog, Users, LogOut, Bell, ExternalLink, Eye, EyeOff, AlertCircle, ScanLine, MonitorPlay, Star } from 'lucide-react'
 import { useApp } from '../store'
 import { Button, Field, Toasts, cx } from '../components/ui'
 import { Logo } from '../components/Layout'
@@ -8,6 +8,7 @@ import { A, type SlotsByDay } from './adminContext'
 import Orders from './Orders'
 import SettingsPage from './SettingsPage'
 import Customers from './Customers'
+import Reviews from './Reviews'
 import Scan from './Scan'
 import Queue from './Queue'
 import NotificationsPanel from './NotificationsPanel'
@@ -123,6 +124,7 @@ const NAV = [
   { to: '#/admin/queue', label: 'Queue', icon: MonitorPlay },
   { to: '#/admin/settings', label: 'Settings', icon: Cog },
   { to: '#/admin/customers', label: 'Customers', icon: Users },
+    { to: '#/admin/reviews', label: 'Reviews', icon: Star },
 ]
 
 /* ------------------------------------------------------------- AdminApp */
@@ -136,6 +138,7 @@ export default function AdminApp() {
   const [settingsLoaded, setSettingsLoaded] = useState(false)
   const [slotsByDay, setSlotsByDay] = useState<SlotsByDay>({ fri: [], sat: [], sun: [] })
   const [bellOpen, setBellOpen] = useState(false)
+    const [pendingReviews, setPendingReviews] = useState(0)
 
   const ordersRef = useRef<Array<AOrder & { id: string }>>([])
   const batchKeyById = useRef<Record<number, BatchKey>>({})
@@ -314,6 +317,15 @@ export default function AdminApp() {
     await loadOrders()
   }, [loadSettings, loadOrders])
 
+    /* ---- reviews waiting for approval (badge on the Reviews tab) ---- */
+  const loadPendingReviews = useCallback(async () => {
+    const { count, error } = await supabase.from('reviews').select('id', { count: 'exact', head: true }).eq('is_published', false)
+    if (!error) setPendingReviews(count ?? 0)
+  }, [])
+  useEffect(() => {
+    if (authed) void loadPendingReviews()
+  }, [authed, route, loadPendingReviews])
+  
   /* ---- load + live updates once signed in ---- */
   useEffect(() => {
     if (!authed) return
@@ -462,9 +474,10 @@ export default function AdminApp() {
   const page = route.replace('#/admin', '')
   const body: ReactNode = page.startsWith('/settings')
     ? (settingsLoaded ? <SettingsPage /> : <p className="text-ink-soft">Loading settings…</p>)
-    : page.startsWith('/customers') ? <Customers />
+        : page.startsWith('/customers') ? <Customers />
+      : page.startsWith('/reviews') ? <Reviews onChanged={loadPendingReviews} />
       : page.startsWith('/queue') ? <Queue /> : page.startsWith('/scan') ? <Scan /> : <Orders />
-  const active = (to: string) => (to === '#/admin' ? !page.startsWith('/settings') && !page.startsWith('/customers') && !page.startsWith('/scan') && !page.startsWith('/queue') : route.startsWith(to))
+    const active = (to: string) => (to === '#/admin' ? !page.startsWith('/settings') && !page.startsWith('/customers') && !page.startsWith('/reviews') && !page.startsWith('/scan') && !page.startsWith('/queue') : route.startsWith(to))
 
   return (
     <A.Provider value={ctx}>
@@ -475,6 +488,7 @@ export default function AdminApp() {
             {NAV.map((n) => (
               <a key={n.to} href={n.to} className={cx('flex items-center gap-3 rounded-full px-4 py-3 text-[15px] font-semibold transition', active(n.to) ? 'bg-red text-white shadow-soft' : 'text-ink-soft hover:bg-yellow-light/60')}>
                 <n.icon className="size-5" />{n.label}
+                                {n.label === 'Reviews' && pendingReviews > 0 && <span className={cx('ml-auto grid min-w-6 place-items-center rounded-full px-1.5 text-xs font-bold', active(n.to) ? 'bg-white text-red' : 'bg-red text-white')}>{pendingReviews}</span>}
                 {n.label === 'Orders' && fresh > 0 && <span className={cx('ml-auto grid min-w-6 place-items-center rounded-full px-1.5 text-xs font-bold', active(n.to) ? 'bg-white text-red' : 'bg-red text-white')}>{fresh}</span>}
               </a>
             ))}
@@ -494,7 +508,7 @@ export default function AdminApp() {
               </div>
             </div>
             <nav className="flex gap-1 overflow-x-auto px-4 pb-2 no-scrollbar lg:hidden">
-              {NAV.map((n) => <a key={n.to} href={n.to} className={cx('flex min-h-11 shrink-0 items-center gap-2 rounded-full px-4 text-sm font-semibold', active(n.to) ? 'bg-red text-white' : 'bg-cream text-ink-soft')}><n.icon className="size-4" />{n.label}</a>)}
+              {NAV.map((n) => <a key={n.to} href={n.to} className={cx('flex min-h-11 shrink-0 items-center gap-2 rounded-full px-4 text-sm font-semibold', active(n.to) ? 'bg-red text-white' : 'bg-cream text-ink-soft')}><n.icon className="size-4" />{n.label}{n.label === 'Reviews' && pendingReviews > 0 && <span className="grid min-w-5 place-items-center rounded-full bg-red px-1 text-xs font-bold text-white">{pendingReviews}</span>}</a>)}
             </nav>
           </header>
           <main className="px-4 py-6 sm:px-8">{body}</main>

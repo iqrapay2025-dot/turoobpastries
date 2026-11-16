@@ -9,6 +9,7 @@ import { stageIndex, prettyDate, messageOf, type OrderView } from '../lib/orderV
 import QrCode from '../components/QrCode'
 import { scanUrl } from '../lib/scan'
 import ReorderButton from '../components/ReorderButton'
+import ReviewBox from '../components/ReviewBox'
 
 // Shape returned by the track_order database function.
 type TrackView = {
@@ -31,6 +32,8 @@ export default function Status() {
   const [code, setCode] = useState(order?.track_code ?? '')
   const [phone, setPhone] = useState(order?.phone ?? '')
   const [res, setRes] = useState<TrackView | 'none' | null>(null)
+  // The code and phone that found this order (the fields can be edited afterwards).
+  const [found, setFound] = useState<{ code: string; phone: string } | null>(null)
   const [loading, setLoading] = useState(false)
 
   const find = async (e: React.FormEvent) => {
@@ -41,9 +44,11 @@ export default function Status() {
     }
     setLoading(true)
     setRes(null)
+    setFound(null)
     try {
       const data = (await trackOrder(code.trim(), phone.trim())) as TrackView | null
       setRes(data ?? 'none')
+      if (data) setFound({ code: code.trim(), phone: phone.trim() })
     } catch (err) {
       toast('error', messageOf(err))
       setRes('none')
@@ -137,6 +142,8 @@ export default function Status() {
           {r.order_status === 'ready_for_pickup' && (
             <div className="mt-5"><Notice title="Your order is ready for pickup">Come and collect it and show your order number <b>{r.order_number}</b>.</Notice></div>
           )}
+
+          {paid && !cancelled && found && <ReviewBox key={found.code} code={found.code} phone={found.phone} />}
 
           {next && (
             <div className="mt-5 space-y-3">
