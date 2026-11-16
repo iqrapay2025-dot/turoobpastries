@@ -175,11 +175,16 @@ function Reviews({ items }: { items: Review[] }) {
 /* ------------------------------------------------------------ Fallbacks */
 // Placeholder content is only used for reviews and team members.
 const FALLBACK_REVIEWS: Review[] = [
-  { name: 'Fatima A.', where: '300L, Law', rating: 5, text: 'The pepper one is dangerous. I ordered 20 for my hostel and we finished them before Asr.' },
-  { name: 'Tunde O.', where: '200L, Engineering', rating: 5, text: 'Still hot when I picked up after Jumah. Pre-ordering saved me from the queue.' },
-  { name: 'Maryam S.', where: 'Staff, Faculty of Arts', rating: 4, text: 'Soft, sweet and not oily. Delivery to my office was on time.' },
-  { name: 'Ibrahim K.', where: '400L, Sciences', rating: 5, text: 'Cleanest ordering experience on campus. Paid with OPay in seconds.' },
-  { name: 'Hauwa B.', where: '100L, Pharmacy', rating: 5, text: 'Best puff-puff in Ilorin, honestly. Love that I can order for Saturday too!' },
+  { name: 'Ajibola James', where: '500L, Biomedical Engineering', rating: 3, text: 'It feels homemade.' },
+  { name: 'Anonymous', where: '500L', rating: 4, text: "I love the spicy puff puff, it's 10/10." },
+  { name: 'Anonymous', where: '500L', rating: 5, text: 'Unique taste and succulence.' },
+  { name: 'Abubakar Ahmad Abdumumeen', where: '500L, Computer Engineering', rating: 5, text: 'It has the right amount of fluffiness and sweetness.' },
+  { name: 'Anonymous', where: '500L', rating: 4, text: "The puff puff is nice and filling, and it wasn't too sugary." },
+  { name: 'Adedeji Abdulhammed Adewale', where: '500L, Biomedical Engineering', rating: 5, text: 'Your product is good, honestly.' },
+  { name: 'Anonymous', where: '500L', rating: 5, text: 'It had the right amount of sweetener. It was just perfect.' },
+  { name: 'Busari Iqbal', where: '500L, Civil Engineering', rating: 5, text: 'The taste.' },
+  { name: 'Anonymous', where: '400L', rating: 5, text: 'The hotness of it.' },
+  { name: 'Anonymous', where: '500L', rating: 5, text: 'The flavour is rich. It tastes good.' },
 ]
 
 const FALLBACK_TEAM: TeamMember[] = [
