@@ -1,7 +1,7 @@
 import t1 from './assets/team-t1.jpg'
 import t2 from './assets/team-t2.jpg'
 import t3 from './assets/team-t3.jpg'
-import jumah from './assets/jumah muhammed.jpg'
+import jumah from './assets/jumah muhammed.png'
 import abdulazeez from './assets/abdulazeez adegbite.jpg'
 import ademola from './assets/Ademola Khalif.jpg'
 import muhammadulawwal from './assets/Muhammadulawwal Abdulsamod.jpg'
