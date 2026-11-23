@@ -21,6 +21,9 @@ export type AOrder = {
     customerCode?: string // e.g. CUS-00007
   customerBlocked?: boolean
     bonusPuffs?: number // free puff-puffs won in the waiting game, to add at handover
+        referralPuffs?: number // free puff-puffs earned through referrals, to add at handover
+    referralZobo?: number // free zobo earned through referrals, to add at handover
+    referralCode?: string // the referral code this customer used at checkout
 }
 
 export type Settings = {

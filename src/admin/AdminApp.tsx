@@ -302,6 +302,9 @@ export default function AdminApp() {
                     customerCode: o.customers?.customer_code ?? '',
           customerBlocked: !!o.customers?.is_blocked,
                     bonusPuffs: Number(o.bonus_puffs ?? 0),
+                                        referralPuffs: Number(o.referral_puffs ?? 0),
+                    referralZobo: Number(o.referral_zobo ?? 0),
+                    referralCode: o.referral_code ?? '',
         } as unknown as AOrder & { id: string }
       })
       ordersRef.current = mapped

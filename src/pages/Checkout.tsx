@@ -1,9 +1,9 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Store, Bike, ChevronLeft, ShoppingBag, Gift } from 'lucide-react'
 import { useApp, type Fulfilment } from '../store'
 import { Button, EmptyState, Field, Notice, cx } from '../components/ui'
 import { Lines, Totals } from '../components/Summary'
-import { placeOrder, notify, paystackInit, setGiftDetails, setPickupSlot } from '../lib/supabase'
+import { placeOrder, notify, paystackInit, setGiftDetails, setPickupSlot, getReferralConfig, checkReferralCode, type ReferralConfig } from '../lib/supabase'
 import { loadSavedCustomer, saveCustomer, forgetCustomer } from '../lib/savedCustomer'
 import { naira } from '../data'
 import Loader from '../components/Loader'
@@ -55,6 +55,22 @@ const AREAS: { group: string; zone: 'on' | 'off'; places: string[] }[] = [
   const [touched, setTouched] = useState(false)
   const [seen, setSeen] = useState<Record<string, boolean>>({})
   const [submitting, setSubmitting] = useState(false)
+    // Referral code: pre-filled from a shared link like /#/order?ref=TURXXXXX
+  const [ref, setRef] = useState(() => {
+    const fromHash = window.location.hash.split('?')[1] ?? ''
+    const raw = new URLSearchParams(window.location.search).get('ref') ?? new URLSearchParams(fromHash).get('ref') ?? ''
+    return raw.toUpperCase().replace(/[^A-Z0-9]/g, '')
+  })
+  const [refCfg, setRefCfg] = useState<ReferralConfig | null>(null)
+  const [refOk, setRefOk] = useState<boolean | null>(null)
+  useEffect(() => {
+    getReferralConfig().then(setRefCfg).catch(() => setRefCfg(null))
+  }, [])
+  useEffect(() => {
+    if (ref.length < 4) { setRefOk(null); return }
+    const t = setTimeout(() => { checkReferralCode(ref).then(setRefOk).catch(() => setRefOk(null)) }, 400)
+    return () => clearTimeout(t)
+  }, [ref])
   const blur = (k: string) => () => setSeen((x) => ({ ...x, [k]: true }))
 
   if (productsLoading) return <main className="mx-auto max-w-lg px-4"><Loader page label="Loading your order…" /></main>
@@ -124,6 +140,7 @@ const AREAS: { group: string; zone: 'on' | 'off'; places: string[] }[] = [
         delivery_slot: mode === 'delivery' ? chosenSlot || undefined : undefined,
         notes: orderNotes || undefined,
         items: items.map((i) => ({ product_id: i.id, quantity: i.qty })),
+                referral_code: refCfg?.enabled && refOk ? ref : undefined,
       })) as { order_number: string; public_token: string; track_code: string; total: number }
 
       // Pickup window (best effort: the order is already placed).
@@ -310,6 +327,19 @@ const AREAS: { group: string; zone: 'on' | 'off'; places: string[] }[] = [
 
           <Section n={4} title="Order notes">
             <Field label="Anything we should know?" optional value={f.notes} onChange={set('notes')} placeholder="e.g. Extra pepper please" />
+            {refCfg?.enabled && (
+              <div className="mt-4">
+                <Field
+                  label="Referral code"
+                  optional
+                  value={ref}
+                  onChange={(e) => setRef(e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, ''))}
+                  placeholder="e.g. TUR12345"
+                  maxLength={12}
+                  hint={ref.length < 4 ? undefined : refOk === true ? 'Code applied ✓' : refOk === false ? 'We could not find this code' : 'Checking…'}
+                />
+              </div>
+            )}
           </Section>
         </div>
 

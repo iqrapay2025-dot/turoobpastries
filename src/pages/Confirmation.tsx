@@ -4,7 +4,7 @@ import { useApp } from '../store'
 import { Button, Sparkle, Tracker, Notice } from '../components/ui'
 import { Lines, Totals } from '../components/Summary'
 import { WA, WhatsAppIcon } from '../components/Layout'
-import { getOrderByToken, paystackInit } from '../lib/supabase'
+import { getOrderByToken, paystackInit, getReferralInfo, type ReferralInfo } from '../lib/supabase'
 import { tokenFromRoute, stageIndex, messageOf, prettyDate, type OrderView } from '../lib/orderView'
 import LottieAnimation from '../components/LottieAnimation'
 import Loader from '../components/Loader'
@@ -39,6 +39,49 @@ function Plain({ title, children, actions }: { title: string; children?: React.R
   )
 }
 
+// Shows the customer's own referral code, progress and a WhatsApp share button.
+// Shows the customer's own referral code, how many friends have ordered, and any reward on this order.
+function ReferralCard({ token }: { token: string }) {
+  const [info, setInfo] = useState<ReferralInfo | null>(null)
+  useEffect(() => {
+    let alive = true
+    getReferralInfo(token).then((r) => { if (alive) setInfo(r) }).catch(() => { /* referral is optional */ })
+    return () => { alive = false }
+  }, [token])
+
+  const i = info as Record<string, unknown> | null
+  const code = typeof i?.code === 'string' ? i.code : ''
+  if (!i || !i.enabled || !i.eligible || !code) return null
+
+  const friends = Number(i.friends ?? 0)
+  const needed = Number(i.orders_needed ?? 0)
+  const pending = Number(i.pending_rewards ?? 0)
+  const rp = Number(i.reward_puffs ?? 0)
+  const rz = Number(i.reward_zobo ?? 0)
+  const earnedP = Number(i.order_referral_puffs ?? 0)
+  const earnedZ = Number(i.order_referral_zobo ?? 0)
+  const join = (p: number, z: number) => [p > 0 && `${p} free puff-puff`, z > 0 && `${z} free zobo`].filter(Boolean).join(' + ')
+  const rewardText = join(rp, rz)
+  const link = `${window.location.origin}/#/order?ref=${code}`
+  const msg = `Try Turoob Pastries puff-puff! Use my code ${code} when you order: ${link}`
+
+  return (
+    <section className="mt-5 rounded-[28px] bg-white p-6 text-center shadow-soft">
+      {(earnedP > 0 || earnedZ > 0) && (
+        <div className="mb-4"><Notice>Referral reward on this order: {join(earnedP, earnedZ)}. We will add it when you collect.</Notice></div>
+      )}
+      <h2 className="text-xl font-semibold">Share and earn</h2>
+      <p className="mx-auto mt-1 max-w-sm text-sm text-ink-soft">
+        {needed > 0 && rewardText ? `Every ${needed} friend${needed > 1 ? 's' : ''} who orders with your code earns you ${rewardText}.` : 'Friends who order with your code earn you free treats.'}
+      </p>
+      <p className="mt-4 font-display text-3xl font-semibold tracking-widest">{code}</p>
+      <p className="mt-2 text-sm font-medium text-ink-soft">{friends} friend{friends === 1 ? '' : 's'} referred{pending > 0 ? ` · ${pending} reward${pending > 1 ? 's' : ''} waiting for your next order` : ''}</p>
+      <a href={`https://wa.me/?text=${encodeURIComponent(msg)}`} target="_blank" rel="noreferrer" className="mt-4 inline-block">
+        <Button variant="dark"><WhatsAppIcon className="size-5" />Share on WhatsApp</Button>
+      </a>
+    </section>
+  )
+}
 export default function Confirmation() {
   const { route, order, go, toast, settings } = useApp()
   const token = tokenFromRoute(route) ?? order?.public_token ?? null
@@ -156,7 +199,15 @@ export default function Confirmation() {
         </section>
       </div>
 
-            {token && ['received', 'preparing'].includes(data.order_status) && <OrderGame token={token} />}
+      {token && ['received', 'preparing'].includes(data.order_status) && <OrderGame token={token} />}
+      {/* {(Number((data as Record<string, unknown>).referral_puffs ?? 0) > 0 || Number((data as Record<string, unknown>).referral_zobo ?? 0) > 0) && (
+        <Notice>
+          Referral reward on this order:{' '}
+          {Number((data as Record<string, unknown>).referral_puffs ?? 0) > 0 && `${String((data as Record<string, unknown>).referral_puffs)} free puff-puff `}
+          {Number((data as Record<string, unknown>).referral_zobo ?? 0) > 0 && `${String((data as Record<string, unknown>).referral_zobo)} free zobo`}
+        </Notice>
+      )} */}
+      {token && <ReferralCard token={token} />}
       <div className="mt-5"><ReorderButton lines={data.items} /></div>
 
       <section className="mt-5 rounded-[28px] bg-white p-6 text-center shadow-soft">

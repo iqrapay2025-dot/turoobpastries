@@ -132,6 +132,12 @@ function Drawer({ no, onClose }: { no: string; onClose: () => void }) {
                 <p className="flex items-center gap-2 font-bold"><Trophy className="size-4 text-red" />Won the game: add {o.bonusPuffs} FREE puff-puff</p>
               </div>
             )}
+                        {((o.referralPuffs ?? 0) > 0 || (o.referralZobo ?? 0) > 0) && (
+              <div className="rounded-2xl border-2 border-red bg-red-tint/60 p-3 text-sm">
+                <p className="flex items-center gap-2 font-bold"><Gift className="size-4 text-red" />Referral reward: add {[(o.referralPuffs ?? 0) > 0 && `${o.referralPuffs} FREE puff-puff`, (o.referralZobo ?? 0) > 0 && `${o.referralZobo} FREE zobo`].filter(Boolean).join(' and ')}</p>
+              </div>
+            )}
+            {o.referralCode && <p className="text-xs font-bold uppercase tracking-wider text-ink/70">Referral code used: {o.referralCode}</p>}
             {o.isGift && (
               <div className="rounded-2xl border-2 border-yellow bg-yellow-light/50 p-3 text-sm">
                 <p className="flex items-center gap-2 font-bold"><Gift className="size-4 text-red" />Gift for {o.recipientName}</p>

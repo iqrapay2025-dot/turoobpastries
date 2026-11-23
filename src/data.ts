@@ -1,18 +1,19 @@
 import t1 from './assets/team-t1.jpg'
 import t2 from './assets/team-t2.jpg'
 import t3 from './assets/team-t3.jpg'
-import jumah from './assets/jumah muhammed.png'
+import jumah from './assets/jumah muhammed.jpg'
 import abdulazeez from './assets/abdulazeez adegbite.jpg'
 import ademola from './assets/Ademola Khalif.jpg'
 import muhammadulawwal from './assets/Muhammadulawwal Abdulsamod.jpg'
 import opatola from './assets/Opatola Abbas.jpg'
 import pepperedImg from './assets/peppered puffpuff.jpg'
+import notPepperedImg from './assets/not peppered puffpuff.jpg'
 import zoboImg from './assets/bliss blend zobo 1.jpg'
 import tigernutImg from './assets/bliss blend tigernut 1.jpg'
 export const IMG = {
   hero: 'https://images.unsplash.com/photo-1767324672458-7dec3a2acffa?w=1000&q=80&fit=crop',
     pepper: pepperedImg,
-  plain: 'https://images.unsplash.com/photo-1667506999146-805370d013f4?w=800&q=80&fit=crop',
+  plain: notPepperedImg,
   zobo: zoboImg,
   tigernut: tigernutImg,
   bowl: 'https://images.unsplash.com/photo-1664993085274-80c6ba725ccc?w=800&q=80&fit=crop',
@@ -64,8 +65,8 @@ export const BATCHES: { id: BatchId; day: string; dow: number; when: string; cut
 export const naira = (n: number) => '₦' + n.toLocaleString('en-NG')
 
 export const TEAM = [
-  { name: 'AbdulAzeez Adegbite Ayomide', role: 'Founder and Head Fryer', img: abdulazeez },
-  { name: 'Ademola Khalif', role: 'Opeartions Maanager', img: ademola },
+  { name: 'AbdulAzeez Adegbite Ayomide', role: 'Founder and Head of Operations', img: abdulazeez },
+  { name: 'Ademola Khalif', role: 'Operations Maanager', img: ademola },
   { name: 'Muhammadulawwal Abdulsamod', role: 'Inventory & Production Coordinator', img: muhammadulawwal },
   { name: 'Jumah Muhammed O.', role: 'Digital Communications & Tech Lead', img: jumah },
     { name: 'Opatola Abass', role: 'Customer Relations & Logistics Officer', img: opatola },

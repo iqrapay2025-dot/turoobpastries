@@ -1,12 +1,12 @@
 import t1 from '../assets/team-t1.jpg'
 import t2 from '../assets/team-t2.jpg'
 import t3 from '../assets/team-t3.jpg'
-import jumah from '../assets/jumah muhammed.png'
+import jumah from '../assets/jumah muhammed.jpg'
 import abdulazeez from '../assets/abdulazeez adegbite.jpg'
 import ademola from '../assets/Ademola Khalif.jpg'
 import muhammadulawwal from '../assets/Muhammadulawwal Abdulsamod.jpg'
 import { useRef, useState, useEffect } from 'react'     
-import { ArrowRight, UtensilsCrossed, Truck, ShieldCheck, Cookie, MapPin, ChevronLeft, ChevronRight, Gamepad2, Lightbulb, Puzzle, Calculator, LayoutGrid, Timer } from 'lucide-react'
+import { ArrowRight, UtensilsCrossed, Truck, ShieldCheck, Cookie, MapPin, ChevronLeft, ChevronRight, Gamepad2 } from 'lucide-react'
 import { useApp } from '../store'
 import { fetchProducts, fetchReviews, fetchTeamMembers } from '../lib/supabase'
 import { Button, SectionTitle, Sparkle } from '../components/ui'
@@ -14,31 +14,15 @@ import { BatchBanner, BatchPicker, ProductCard } from '../components/Blocks'
 import { FAQ, IMG } from '../data'
 import Loader from '../components/Loader'
 import opatola from '../assets/Opatola Abbas.jpg'
-import puffVideo from '../assets/puffpuff video 1.mp4'
 
 /* ---------------------------------------------------------------- Game announcement */
 function GameAnnouncement() {
   const { go, anyOpen } = useApp()
   return (
     <section className="mx-auto max-w-6xl px-4 pt-6 sm:px-6">
-      <div className="relative overflow-hidden rounded-[28px] bg-red p-6 text-white shadow-pop sm:p-8">
-        <div className="grid items-center gap-6 md:grid-cols-[1fr_auto]">
-          <div>
-            <span className="inline-flex items-center gap-2 rounded-full bg-yellow px-3 py-1 text-xs font-bold uppercase tracking-wide text-ink"><Gamepad2 className="size-4" />New</span>
-            <h2 className="mt-3 font-display text-2xl font-semibold leading-tight sm:text-3xl">Play while we fry. Win a free puff-puff.</h2>
-            <p className="mt-2 max-w-xl text-white/90">After you pay, pick a game while your order is being prepared: riddles, puzzles, a math challenge or memory match. Beat the clock and we add one extra puff-puff to your order.</p>
-            <ul className="mt-4 flex flex-wrap gap-2 text-sm font-semibold">
-              {([[Lightbulb, 'Riddles'], [Puzzle, 'Puzzles'], [Calculator, 'Math'], [LayoutGrid, 'Memory match']] as const).map(([Icon, label]) => (
-                <li key={label} className="inline-flex items-center gap-1.5 rounded-full bg-white/15 px-3 py-1.5"><Icon className="size-4" />{label}</li>
-              ))}
-              <li className="inline-flex items-center gap-1.5 rounded-full bg-yellow px-3 py-1.5 text-ink"><Timer className="size-4" />Against the clock</li>
-            </ul>
-            <p className="mt-3 text-xs text-white/80">One try per paid order. Limited free puff-puffs each day.</p>
-          </div>
-          <div className="md:text-right">
-            <Button variant="yellow" size="lg" disabled={!anyOpen} onClick={() => go('#/order')}>{anyOpen ? 'Order and play' : 'Orders closed'}<ArrowRight className="size-5" /></Button>
-          </div>
-        </div>
+      <div className="flex flex-col items-start justify-between gap-4 rounded-[28px] bg-red p-5 text-white shadow-pop sm:flex-row sm:items-center sm:p-6">
+        <p className="flex items-center gap-3 font-display text-xl font-semibold sm:text-2xl"><Gamepad2 className="size-6 shrink-0 text-yellow" />Play while we fry. Win a free puff-puff.</p>
+        <Button variant="yellow" disabled={!anyOpen} onClick={() => go('#/order')}>{anyOpen ? 'Order and play' : 'Orders closed'}<ArrowRight className="size-5" /></Button>
       </div>
     </section>
   )
@@ -54,7 +38,7 @@ function Hero() {
         <div>
           <span className="mb-4 inline-flex items-center gap-2 rounded-full bg-yellow px-4 py-1.5 text-sm font-bold"><Cookie className="size-4" />Made by Unilorin students</span>
           <h1 className="text-[44px] font-semibold leading-[1.02] sm:text-6xl lg:text-7xl">Hot, fresh <span className="text-red">puff-puff.</span> Friday, Saturday and Sunday.</h1>
-          <p className="mt-5 max-w-lg text-lg text-ink-soft">Order for Friday, Saturday or Sunday, then pick up at Central Mosque or have it delivered to the University of Ilorin (PS), off-campus or the College of Health Sciences, golden, fluffy and still warm.</p>
+                    <p className="mt-5 max-w-lg text-lg text-ink-soft">Pre-order for Friday, Saturday or Sunday. Pick up at Central Mosque or get it delivered. Golden, fluffy, still warm.</p>
           <div className="mt-7 flex flex-wrap items-center gap-3">
             <Button size="lg" disabled={closed} onClick={() => go('#/order')}>{closed ? 'Orders closed' : 'Pre-order now'}<ArrowRight className="size-5" /></Button>
             <Button size="lg" variant="secondary" onClick={() => go('#/status')}>Track my order</Button>
@@ -77,10 +61,10 @@ function Hero() {
 
 /* --------------------------------------------------------------- Steps */
 const STEPS = [
-    [UtensilsCrossed, 'Choose your puff-puff', 'With or without pepper. Add Zobo or Tigernut when they are in.'],
-  [Truck, 'Pick pickup or delivery', 'Collect at Central Mosque or get it brought to you.'],
-  [ShieldCheck, 'Pay securely', 'Card, bank transfer, USSD or OPay via Paystack.'],
-  [Cookie, 'Enjoy it hot', 'Fried fresh after Jumah, handed over still warm.'],
+  [UtensilsCrossed, 'Choose', 'With or without pepper.'],
+  [Truck, 'Pickup or delivery', 'Collect it or get it brought to you.'],
+  [ShieldCheck, 'Pay', 'Card, transfer, USSD or OPay.'],
+  [Cookie, 'Enjoy', 'Fresh and hot.'],
 ] as const
 
 /* ------------------------------------------------------------ Carousel */
@@ -130,7 +114,7 @@ type TeamMember = { name: string; role: string; img: string }
 function Team({ members }: { members: TeamMember[] }) {
   return (
     <section id="team" className="mx-auto max-w-6xl scroll-mt-20 px-4 py-20 sm:px-6">
-      <SectionTitle eyebrow="Meet the Team" title="The hands behind the fryer" sub="A small crew of Unilorin students, frying with love every Friday." />
+      <SectionTitle eyebrow="Meet the Team" title="The hands behind the fryer"/>
       <Carousel cardW={220}>
         {members.map((m, i) => (
           <div key={m.name} className="group w-55 shrink-0 snap-start overflow-hidden rounded-[28px] bg-white text-center shadow-soft transition duration-300 hover:-translate-y-1.5 hover:shadow-pop">
@@ -152,7 +136,7 @@ type Review = { name: string; where: string; rating: number; text: string }
 function Reviews({ items }: { items: Review[] }) {
   return (
     <section id="reviews" className="mx-auto max-w-6xl scroll-mt-20 px-4 py-16 sm:px-6">
-      <SectionTitle eyebrow="Customer reviews" title="What our customers say" sub="Slide through to read more." />
+      <SectionTitle eyebrow="Customer reviews" title="What our customers say"/>
       <Carousel cardW={320}>
         {items.map((r) => (
           <article key={r.name + r.text} className="flex w-[320px] shrink-0 snap-start flex-col rounded-[28px] bg-white p-6 shadow-soft transition duration-300 hover:-translate-y-1.5 hover:shadow-pop">
@@ -188,8 +172,8 @@ const FALLBACK_REVIEWS: Review[] = [
 ]
 
 const FALLBACK_TEAM: TeamMember[] = [
-  { name: 'AbdulAzeez Adegbite Ayomide', role: 'Founder and Head Fryer', img: abdulazeez },
-  { name: 'Ademola Khalif', role: 'Opeartions Maanager', img: ademola },
+  { name: 'AbdulAzeez Adegbite Ayomide', role: 'Founder and Head of Operations', img: abdulazeez },
+  { name: 'Ademola Khalif', role: 'Operations Manager', img: ademola },
   { name: 'Muhammadulawwal Abdulsamod', role: 'Inventory & Production Coordinator', img: muhammadulawwal },
   { name: 'Jumah Muhammed O.', role: 'Digital Communications & Tech Lead', img: jumah },
     { name: 'Opatola Abass', role: 'Customer Relations & Logistics Officer', img: opatola },
@@ -288,7 +272,7 @@ export default function Home() {
 
       <section className="bg-yellow-light/50 py-16">
         <div className="mx-auto max-w-6xl px-4 sm:px-6">
-          <SectionTitle eyebrow="The menu" title="Fresh from the fryer" sub="Simple, honest and golden. Add a Bliss Blend drink to your order when it is in season." />
+          <SectionTitle eyebrow="The menu" title="Fresh from the fryer"/>
           {productsError ? (
             <p className="rounded-2xl bg-white p-6 text-center font-semibold text-red-dark shadow-soft">
               Couldn’t load the menu. Please refresh the page.
@@ -302,7 +286,7 @@ export default function Home() {
           )}
         </div>
       </section>
-            <section className="mx-auto max-w-6xl px-4 pt-16 sm:px-6">
+            {/* <section className="mx-auto max-w-6xl px-4 pt-16 sm:px-6">
         <SectionTitle eyebrow="Watch" title="Hot out of the fryer" sub="A peek at how every batch is made." />
         <div className="mx-auto max-w-sm overflow-hidden rounded-[28px] bg-ink shadow-pop sm:max-w-md">
           <video
@@ -317,11 +301,11 @@ export default function Home() {
             aria-label="Puff-puff being fried fresh"
           />
         </div>
-      </section>
+      </section> */}
 
       <section className="mx-auto max-w-6xl px-4 py-16 sm:px-6">
         <div className="grid gap-4 rounded-[28px] bg-red p-6 text-white shadow-pop sm:p-8 md:grid-cols-3">
-          {[['Pickup', 'Free', 'Central Mosque, University of Ilorin'], ['On-campus delivery (PS)', 'from ₦100', 'University of Ilorin and the College of Health Sciences: hostel, faculty or office'], ['Off-campus delivery', 'from ₦200', 'Final fee confirmed before payment']].map(([t, p, d]) => (
+                    {[['Pickup', 'Free', 'Central Mosque'], ['On-campus delivery', 'from ₦100', 'Unilorin and the College of Health Sciences'], ['Off-campus delivery', 'from ₦200', 'Fee confirmed before payment']].map(([t, p, d]) => (
             <div key={t} className="flex items-start gap-4 rounded-2xl bg-white/10 p-5 transition duration-300 hover:-translate-y-1 hover:bg-white/20">
               <MapPin className="mt-1 size-6 shrink-0 text-yellow" />
               <div><p className="text-sm font-semibold text-white">{t}</p><p className="font-display text-3xl font-semibold">{p}</p><p className="mt-1 text-sm text-white">{d}</p></div>
@@ -331,7 +315,7 @@ export default function Home() {
       </section>
 
       <section className="mx-auto max-w-6xl px-4 sm:px-6">
-        <SectionTitle eyebrow="This weekend" title="Pick your fry day" sub="Friday, Saturday and Sunday batches. Each closes at 7am on the day, so order the night before." />
+        <SectionTitle eyebrow="This weekend" title="Pick your fry day"/>
         <BatchPicker />
       </section>
 
@@ -340,7 +324,7 @@ export default function Home() {
       <Reviews items={activeReviews} />
 
       <section id="faq" className="mx-auto max-w-6xl scroll-mt-20 px-4 py-10 sm:px-6">
-        <SectionTitle eyebrow="FAQ" title="Questions? We have answers" sub="Slide through the most common questions." />
+        <SectionTitle eyebrow="FAQ" title="Questions? We have answers"/>
         <Carousel cardW={320}>
           {FAQ.map(([q, a], i) => (
             <article key={q} className="flex w-[320px] shrink-0 snap-start flex-col rounded-[28px] bg-white p-6 shadow-soft transition duration-300 hover:-translate-y-1.5 hover:shadow-pop">
