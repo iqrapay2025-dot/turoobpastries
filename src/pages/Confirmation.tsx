@@ -82,6 +82,55 @@ function ReferralCard({ token }: { token: string }) {
     </section>
   )
 }
+
+/* ------------------------------------------------------------ referral promo UI
+   * Shows: referral code, how many friends needed, reward (2 puff-puffs + 1 zobo)
+   * Replaces the old OrderGame "waiting game" section. */
+function ReferralPromo({ token, data }: { token: string; data: OrderView | null }) {
+  const { toast } = useApp()
+  const [info, setInfo] = useState<ReferralInfo | null>(null)
+  useEffect(() => {
+    let alive = true
+    getReferralInfo(token).then((r) => { if (alive) setInfo(r) }).catch(() => { /* referral is optional */ })
+    return () => { alive = false }
+  }, [token])
+
+  const i = info as Record<string, unknown> | null
+  const code = typeof i?.code === 'string' ? i.code : ''
+  if (!i || !i.enabled || !i.eligible || !code) return null
+
+  const friends = Number(i.friends ?? 0)
+  const needed = Number(i.orders_needed ?? 0)
+  const rp = Number(i.reward_puffs ?? 0)
+  const rz = Number(i.reward_zobo ?? 0)
+  // always show the promo reward: 2 puff-puffs + 1 zobo for referrals
+  const rewardPuffs = 2
+  const rewardZobo = 1
+  const earnedP = Number(i.order_referral_puffs ?? 0)
+  const earnedZ = Number(i.order_referral_zobo ?? 0)
+
+  const link = `${window.location.origin}/#/order?ref=${code}`
+  const msg = `Try Turoob Pastries puff-puff! Use my code ${code} when you order: ${link}`
+
+  return (
+    <section className="mt-5 rounded-[28px] bg-white p-6 text-center shadow-soft">
+      <h2 className="text-xl font-semibold">Referral promo</h2>
+      <p className="mx-auto mt-1 max-w-sm text-sm text-ink-soft">
+        Refer your friends from your hostel and earn rewards:{' '}
+        <span className="font-medium text-red">{rewardPuffs} free puff-puff</span>{' '}
+        +{' '}
+        <span className="font-medium text-yellow">{rewardZobo} free zobo</span>{' '}
+        bottle{' '}
+        {needed > 0 ? (`every ${needed} friend${needed > 1 ? 's' : ''} who orders with your code earns you this reward`) : 'friends who order with your code earn you free treats.'}
+      </p>
+      <p className="mt-4 font-display text-3xl font-semibold tracking-widest">{code}</p>
+      <p className="mt-2 text-sm font-medium text-ink-soft">{friends} friend{friends === 1 ? '' : 's'} referred</p>
+      <a href={`https://wa.me/?text=${encodeURIComponent(msg)}`} target="_blank" rel="noreferrer" className="mt-4 inline-block">
+        <Button variant="dark"><WhatsAppIcon className="size-5" />Share on WhatsApp</Button>
+      </a>
+    </section>
+  )
+}
 export default function Confirmation() {
   const { route, order, go, toast, settings } = useApp()
   const token = tokenFromRoute(route) ?? order?.public_token ?? null
@@ -199,7 +248,7 @@ export default function Confirmation() {
         </section>
       </div>
 
-      {token && ['received', 'preparing'].includes(data.order_status) && <OrderGame token={token} />}
+      {token && <ReferralPromo token={token} data={data} />}
       {/* {(Number((data as Record<string, unknown>).referral_puffs ?? 0) > 0 || Number((data as Record<string, unknown>).referral_zobo ?? 0) > 0) && (
         <Notice>
           Referral reward on this order:{' '}

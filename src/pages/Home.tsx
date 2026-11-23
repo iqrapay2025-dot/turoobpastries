@@ -15,14 +15,18 @@ import { FAQ, IMG } from '../data'
 import Loader from '../components/Loader'
 import opatola from '../assets/Opatola Abbas.jpg'
 
-/* ---------------------------------------------------------------- Game announcement */
-function GameAnnouncement() {
+/* ---------------------------------------------------------------- Referral promo */
+function ReferralPromo() {
   const { go, anyOpen } = useApp()
   return (
     <section className="mx-auto max-w-6xl px-4 pt-6 sm:px-6">
       <div className="flex flex-col items-start justify-between gap-4 rounded-[28px] bg-red p-5 text-white shadow-pop sm:flex-row sm:items-center sm:p-6">
-        <p className="flex items-center gap-3 font-display text-xl font-semibold sm:text-2xl"><Gamepad2 className="size-6 shrink-0 text-yellow" />Play while we fry. Win a free puff-puff.</p>
-        <Button variant="yellow" disabled={!anyOpen} onClick={() => go('#/order')}>{anyOpen ? 'Order and play' : 'Orders closed'}<ArrowRight className="size-5" /></Button>
+        <p className="flex items-center gap-3 font-display text-xl font-semibold sm:text-2xl">
+          <Gamepad2 className="size-6 shrink-0 text-yellow" />Refer friends from your hostel
+        </p>
+        <Button variant="yellow" disabled={!anyOpen} onClick={() => go('#/order')}>
+          {anyOpen ? 'Order and refer' : 'Orders closed'}
+        </Button>
       </div>
     </section>
   )
@@ -159,7 +163,7 @@ function Reviews({ items }: { items: Review[] }) {
 /* ------------------------------------------------------------ Fallbacks */
 // Placeholder content is only used for reviews and team members.
 const FALLBACK_REVIEWS: Review[] = [
-  { name: 'Ajibola James', where: '500L, Biomedical Engineering', rating: 3, text: 'It feels homemade.' },
+  { name: 'Ajibola James', where: '500L, Biomedical Engineering', rating: 5, text: 'It feels homemade.' },
   { name: 'Anonymous', where: '500L', rating: 4, text: "I love the spicy puff puff, it's 10/10." },
   { name: 'Anonymous', where: '500L', rating: 5, text: 'Unique taste and succulence.' },
   { name: 'Abubakar Ahmad Abdumumeen', where: '500L, Computer Engineering', rating: 5, text: 'It has the right amount of fluffiness and sweetness.' },
@@ -255,7 +259,7 @@ export default function Home() {
     <main>
       <Hero />
       <div className="mx-auto max-w-6xl px-4 sm:px-6"><BatchBanner /></div>
-      <GameAnnouncement />
+      <ReferralPromo />
 
       <section className="mx-auto max-w-6xl px-4 py-16 sm:px-6">
         <SectionTitle eyebrow="How it works" title="Four steps to warm puff-puff" center />

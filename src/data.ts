@@ -76,7 +76,7 @@ export const TEAM = [
 ]
 
 export const REVIEWS = [
-  { name: 'Ajibola James', where: '500L, Biomedical Engineering', rating: 3, text: 'It feels homemade.' },
+  { name: 'Ajibola James', where: '500L, Biomedical Engineering', rating: 5, text: 'It feels homemade.' },
   { name: 'Anonymous', where: '500L', rating: 4, text: "I love the spicy puff puff, it's 10/10." },
   { name: 'Anonymous', where: '500L', rating: 5, text: 'Unique taste and succulence.' },
   { name: 'Abubakar Ahmad Abdumumeen', where: '500L, Computer Engineering', rating: 5, text: 'It has the right amount of fluffiness and sweetness.' },
