@@ -309,7 +309,7 @@ export default function Home() {
 
       <section className="mx-auto max-w-6xl px-4 py-16 sm:px-6">
         <div className="grid gap-4 rounded-[28px] bg-red p-6 text-white shadow-pop sm:p-8 md:grid-cols-3">
-                    {[['Pickup', 'Free', 'Central Mosque'], ['On-campus delivery', 'from ₦100', 'Unilorin and the College of Health Sciences'], ['Off-campus delivery', 'from ₦200', 'Fee confirmed before payment']].map(([t, p, d]) => (
+                    {[['Pickup', 'Free', 'Central Mosque'], ['On-campus delivery', 'from ₦150', 'Unilorin and the College of Health Sciences'], ['Off-campus delivery', 'from ₦300', 'Fee confirmed before payment']].map(([t, p, d]) => (
             <div key={t} className="flex items-start gap-4 rounded-2xl bg-white/10 p-5 transition duration-300 hover:-translate-y-1 hover:bg-white/20">
               <MapPin className="mt-1 size-6 shrink-0 text-yellow" />
               <div><p className="text-sm font-semibold text-white">{t}</p><p className="font-display text-3xl font-semibold">{p}</p><p className="mt-1 text-sm text-white">{d}</p></div>
