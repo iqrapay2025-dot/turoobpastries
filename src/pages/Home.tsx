@@ -6,7 +6,7 @@ import abdulazeez from '../assets/abdulazeez adegbite.jpg'
 import ademola from '../assets/Ademola Khalif.jpg'
 import muhammadulawwal from '../assets/Muhammadulawwal Abdulsamod.jpg'
 import { useRef, useState, useEffect } from 'react'     
-import { ArrowRight, UtensilsCrossed, Truck, ShieldCheck, Cookie, MapPin, ChevronLeft, ChevronRight, Gamepad2 } from 'lucide-react'
+import { ArrowRight, UtensilsCrossed, Truck, ShieldCheck, Cookie, MapPin, ChevronLeft, ChevronRight, Gamepad2, Lightbulb, Puzzle, Calculator, LayoutGrid, Timer } from 'lucide-react'
 import { useApp } from '../store'
 import { fetchProducts, fetchReviews, fetchTeamMembers } from '../lib/supabase'
 import { Button, SectionTitle, Sparkle } from '../components/ui'
@@ -15,18 +15,29 @@ import { FAQ, IMG } from '../data'
 import Loader from '../components/Loader'
 import opatola from '../assets/Opatola Abbas.jpg'
 
-/* ---------------------------------------------------------------- Referral promo */
-function ReferralPromo() {
+/* ---------------------------------------------------------------- Game announcement */
+function GameAnnouncement() {
   const { go, anyOpen } = useApp()
   return (
     <section className="mx-auto max-w-6xl px-4 pt-6 sm:px-6">
-      <div className="flex flex-col items-start justify-between gap-4 rounded-[28px] bg-red p-5 text-white shadow-pop sm:flex-row sm:items-center sm:p-6">
-        <p className="flex items-center gap-3 font-display text-xl font-semibold sm:text-2xl">
-          <Gamepad2 className="size-6 shrink-0 text-yellow" />Refer friends from your hostel
-        </p>
-        <Button variant="yellow" disabled={!anyOpen} onClick={() => go('#/order')}>
-          {anyOpen ? 'Order and refer' : 'Orders closed'}
-        </Button>
+      <div className="relative overflow-hidden rounded-[28px] bg-red p-6 text-white shadow-pop sm:p-8">
+        <div className="grid items-center gap-6 md:grid-cols-[1fr_auto]">
+          <div>
+            <span className="inline-flex items-center gap-2 rounded-full bg-yellow px-3 py-1 text-xs font-bold uppercase tracking-wide text-ink"><Gamepad2 className="size-4" />New</span>
+            <h2 className="mt-3 font-display text-2xl font-semibold leading-tight sm:text-3xl">Play while we fry. Win a free puff-puff.</h2>
+            <p className="mt-2 max-w-xl text-white/90">After you pay, pick a game while your order is being prepared: riddles, puzzles, a math challenge or memory match. Beat the clock and we add one extra puff-puff to your order.</p>
+            <ul className="mt-4 flex flex-wrap gap-2 text-sm font-semibold">
+              {([[Lightbulb, 'Riddles'], [Puzzle, 'Puzzles'], [Calculator, 'Math'], [LayoutGrid, 'Memory match']] as const).map(([Icon, label]) => (
+                <li key={label} className="inline-flex items-center gap-1.5 rounded-full bg-white/15 px-3 py-1.5"><Icon className="size-4" />{label}</li>
+              ))}
+              <li className="inline-flex items-center gap-1.5 rounded-full bg-yellow px-3 py-1.5 text-ink"><Timer className="size-4" />Against the clock</li>
+            </ul>
+            <p className="mt-3 text-xs text-white/80">One try per paid order. Limited free puff-puffs each day.</p>
+          </div>
+          <div className="md:text-right">
+            <Button variant="yellow" size="lg" disabled={!anyOpen} onClick={() => go('#/order')}>{anyOpen ? 'Order and play' : 'Orders closed'}<ArrowRight className="size-5" /></Button>
+          </div>
+        </div>
       </div>
     </section>
   )
@@ -47,7 +58,7 @@ function Hero() {
             <Button size="lg" disabled={closed} onClick={() => go('#/order')}>{closed ? 'Orders closed' : 'Pre-order now'}<ArrowRight className="size-5" /></Button>
             <Button size="lg" variant="secondary" onClick={() => go('#/status')}>Track my order</Button>
           </div>
-          {closed && <p className="mt-3 text-sm font-semibold text-red-dark">Orders are closed right now. Each day opens at 6pm the evening before and closes at 7am.</p>}
+          {closed && <p className="mt-3 text-sm font-semibold text-red-dark">Orders are closed right now. See the days below for opening times.</p>}
         </div>
         <div className="relative mx-auto w-full max-w-md lg:max-w-none">
           <div className="absolute -inset-3 rotate-3 rounded-[48px] bg-yellow" />
@@ -176,7 +187,7 @@ const FALLBACK_REVIEWS: Review[] = [
 ]
 
 const FALLBACK_TEAM: TeamMember[] = [
-  { name: 'AbdulAzeez Adegbite Ayomide', role: 'Founder and Head of Operations', img: abdulazeez },
+  { name: 'AbdulAzeez Adegbite Ayomide', role: 'Founder & Head of Operation', img: abdulazeez },
   { name: 'Ademola Khalif', role: 'Operations Manager', img: ademola },
   { name: 'Muhammadulawwal Abdulsamod', role: 'Inventory & Production Coordinator', img: muhammadulawwal },
   { name: 'Jumah Muhammed O.', role: 'Digital Communications & Tech Lead', img: jumah },
@@ -259,7 +270,7 @@ export default function Home() {
     <main>
       <Hero />
       <div className="mx-auto max-w-6xl px-4 sm:px-6"><BatchBanner /></div>
-      <ReferralPromo />
+      <GameAnnouncement />
 
       <section className="mx-auto max-w-6xl px-4 py-16 sm:px-6">
         <SectionTitle eyebrow="How it works" title="Four steps to warm puff-puff" center />
@@ -344,7 +355,7 @@ export default function Home() {
         <div className="relative overflow-hidden rounded-4xl bg-yellow p-8 text-center sm:p-12">
           <div className="relative">
             <h2 className="text-3xl font-semibold sm:text-5xl">Hungry already?</h2>
-            <p className="mx-auto mt-2 max-w-md">Lock in your puff-puff before each 7am batch cutoff.</p>
+            <p className="mx-auto mt-2 max-w-md">Order before the batch closes.</p>
             <Button size="lg" variant="dark" className="mt-6" onClick={() => go('#/order')}>Pre-order now<ArrowRight className="size-5" /></Button>
           </div>
         </div>

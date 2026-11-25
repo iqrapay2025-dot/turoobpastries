@@ -49,35 +49,7 @@ export async function placeOrder(order: any) {
   return data
 }
 
-// --- Referral promo ---
-export type ReferralConfig = { enabled: boolean; orders_needed: number; reward_puffs: number; reward_zobo: number }
-export type ReferralInfo = {
-  enabled: boolean
-  eligible?: boolean
-  code?: string
-  friends?: number
-  orders_needed?: number
-  reward_puffs?: number
-  reward_zobo?: number
-  pending_rewards?: number
-  order_referral_puffs?: number
-  order_referral_zobo?: number
-}
-export async function getReferralConfig() {
-  const { data, error } = await supabase.rpc('get_referral_config')
-  if (error) throw error
-  return data as ReferralConfig | null
-}
-export async function checkReferralCode(code: string) {
-  const { data, error } = await supabase.rpc('check_referral_code', { p_code: code })
-  if (error) throw error
-  return !!data
-}
-export async function getReferralInfo(token: string) {
-  const { data, error } = await supabase.rpc('get_referral_info', { p_token: token })
-  if (error) throw error
-  return data as ReferralInfo
-}
+
 
 // --- Edge Function: notify (emails) ---
 export async function notify(params: { type: 'order_received' | 'fee_confirm' | 'order_ready'; public_token?: string; order_id?: string }) {

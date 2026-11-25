@@ -21,9 +21,7 @@ export type AOrder = {
     customerCode?: string // e.g. CUS-00007
   customerBlocked?: boolean
     bonusPuffs?: number // free puff-puffs won in the waiting game, to add at handover
-        referralPuffs?: number // free puff-puffs earned through referrals, to add at handover
-    referralZobo?: number // free zobo earned through referrals, to add at handover
-    referralCode?: string // the referral code this customer used at checkout
+
 }
 
 export type Settings = {
@@ -68,7 +66,7 @@ export const DEFAULTS: Settings = {
   open: { fri: true, sat: true, sun: true },
   cutoff: { fri: '07:00', sat: '07:00', sun: '07:00' },
   opens: { fri: '18:00', sat: '18:00', sun: '18:00' },
-  zobo: true, zoboPrice: 500, maxOn: true, max: 150, feeOn: 100, feeOff: 200,
+  zobo: true, zoboPrice: 600, maxOn: true, max: 150, feeOn: 150, feeOff: 300,
   slots: ['2:45pm', '3:15pm', '3:45pm', '4:15pm', '4:45pm'],
   puffPrice: PUFF_PRICE,
 }

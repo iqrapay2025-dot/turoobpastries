@@ -38,7 +38,7 @@ const EMPTY_SETTINGS: Settings = {
   cutoff: { fri: '15:30', sat: '05:00', sun: '05:00' },
   opens: { fri: '18:00', sat: '18:00', sun: '18:00' },
   zobo: false,
-  zoboPrice: 500,
+  zoboPrice: 600,
   maxOn: false,
   max: 150,
   feeOn: 100,
@@ -227,11 +227,11 @@ export default function AdminApp() {
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         zobo: zobos.some((p: any) => p.is_available),
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        zoboPrice: zobos.length ? Math.min(...zobos.map((p: any) => Number(p.price))) : 500,
+        zoboPrice: zobos.length ? Math.min(...zobos.map((p: any) => Number(p.price))) : 600,
         maxOn: maxes.length > 0,
         max: maxes.length ? Number(maxes[0]) : 150,
-        feeOn: Number(st.data.on_campus_fee ?? 100),
-        feeOff: Number(st.data.off_campus_fee ?? 200),
+        feeOn: Number(st.data.on_campus_fee ?? 150),
+        feeOff: Number(st.data.off_campus_fee ?? 300),
         puffPrice: Number((pr.data ?? []).find((p: { counts_toward_limit: boolean }) => p.counts_toward_limit)?.price ?? 100),
         slots: [],
       })
@@ -302,9 +302,7 @@ export default function AdminApp() {
                     customerCode: o.customers?.customer_code ?? '',
           customerBlocked: !!o.customers?.is_blocked,
                     bonusPuffs: Number(o.bonus_puffs ?? 0),
-                                        referralPuffs: Number(o.referral_puffs ?? 0),
-                    referralZobo: Number(o.referral_zobo ?? 0),
-                    referralCode: o.referral_code ?? '',
+
         } as unknown as AOrder & { id: string }
       })
       ordersRef.current = mapped

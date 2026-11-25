@@ -185,12 +185,7 @@ export default function Scan() {
                 <p className="mt-1 text-xs text-ink/70">Put one extra puff-puff in this order before handing it over.</p>
               </div>
             )}
-                        {((order.referralPuffs ?? 0) > 0 || (order.referralZobo ?? 0) > 0) && (
-              <div className="rounded-2xl border-2 border-red bg-red-tint/60 p-3 text-sm">
-                <p className="flex items-center gap-2 font-bold"><Gift className="size-4 text-red" />Referral reward: add {[(order.referralPuffs ?? 0) > 0 && `${order.referralPuffs} FREE puff-puff`, (order.referralZobo ?? 0) > 0 && `${order.referralZobo} FREE zobo`].filter(Boolean).join(' and ')}</p>
-                <p className="mt-1 text-xs text-ink/70">Add this to the order before handing it over.</p>
-              </div>
-            )}
+
             {order.isGift && (
               <div className="rounded-2xl border-2 border-yellow bg-yellow-light/50 p-3 text-sm">
                 <p className="flex items-center gap-2 font-bold"><Gift className="size-4 text-red" />Gift for {order.recipientName}</p>
