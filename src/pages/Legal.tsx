@@ -64,7 +64,7 @@ export function Terms() {
       <p>[Describe how payment works, e.g. bank transfer before baking / payment on delivery.]</p>
 
       <h2 style={h2}>Cancellations and refunds</h2>
-      <p>[Describe your policy, e.g. orders can be cancelled before baking starts. Because items are made fresh to order, we cannot refund after baking begins.]</p>
+      <p>You can cancel an order before we start preparing it by contacting us on WhatsApp or email with your order code. Because items are made fresh to order, we cannot refund after preparation has begun. If we cancel an order or cannot fulfil it, you will receive a full refund.</p>
 
       <h2 style={h2}>Food and allergens</h2>
       <p>Our pastries may contain wheat, milk, eggs, nuts and other allergens. Please contact us before ordering if you have allergies.</p>
