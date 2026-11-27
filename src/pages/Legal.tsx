@@ -14,8 +14,8 @@ function Page({ title, updated, children }: { title: string; updated: string; ch
   )
 }
 
-const UPDATED = '[DATE]'
-const EMAIL = '[CONTACT EMAIL]'
+const UPDATED = '27 November 2026'
+const EMAIL = 'turoobpastries@gmail.com'
 
 export function Privacy() {
   return (
@@ -44,7 +44,7 @@ export function Privacy() {
       <p>You can ask us to see, correct or delete your information by emailing {EMAIL}.</p>
 
       <h2 style={h2}>Contact</h2>
-      <p>Turoob Pastries, [CITY, STATE, NIGERIA] · {EMAIL} · [PHONE/WHATSAPP]</p>
+      <p>Turoob Pastries, Ilorin, Kwara State, Nigeria · {EMAIL} · +234 708 793 6401</p>
     </Page>
   )
 }
@@ -73,7 +73,7 @@ export function Terms() {
       <p>We may update these terms. The version on this page applies to orders placed after the update date.</p>
 
       <h2 style={h2}>Contact</h2>
-      <p>{EMAIL} · [PHONE/WHATSAPP]</p>
+      <p>{EMAIL} · +234 708 793 6401</p>
     </Page>
   )
 }
